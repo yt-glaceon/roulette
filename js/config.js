@@ -1,7 +1,7 @@
 // Discord アプリケーション設定
 export const config = {
     // Client ID は URL パラメータから取得
-    // 例: https://yourusername.github.io/discord-voice-roulette/?client_id=YOUR_CLIENT_ID
+    // 例: https://yt-glaceon.github.io/roulette/?client_id=YOUR_CLIENT_ID
     get discordClientId() {
         const params = new URLSearchParams(window.location.search);
         const clientId = params.get('client_id');
@@ -13,9 +13,8 @@ export const config = {
         return clientId;
     },
     
-    // GitHub Pages の URL
-    // 例: 'https://yt-glaceon.github.io/roulette/callback.html'
-    redirectUri: window.location.origin + window.location.pathname.replace(/\/$/, '') + '/callback.html',
+    // GitHub Pages のリダイレクト URI（固定値）
+    redirectUri: 'https://yt-glaceon.github.io/roulette/callback.html',
     
     // 必要な Discord API スコープ
     scopes: ['guilds', 'guilds.members.read'],
