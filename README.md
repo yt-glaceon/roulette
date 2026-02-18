@@ -20,7 +20,7 @@ Discord のボイスチャネルに参加しているメンバーから指定人
 3. 「OAuth2」セクションに移動
 4. 「Redirects」に以下の URL を追加:
    ```
-   https://yt-glaceon.github.io/discord-voice-roulette/callback.html
+   https://yt-glaceon.github.io/roulette/callback.html
    ```
 5. Client ID をコピー
 
@@ -28,7 +28,7 @@ Discord のボイスチャネルに参加しているメンバーから指定人
 
 Discord Developer Portal で設定したリダイレクト URI を確認:
 ```
-https://yt-glaceon.github.io/discord-voice-roulette/callback.html
+https://yt-glaceon.github.io/roulette/callback.html
 ```
 
 ※ `js/config.js` の `redirectUri` が正しく設定されているか確認してください。
@@ -43,7 +43,7 @@ https://yt-glaceon.github.io/discord-voice-roulette/callback.html
 
 数分後、以下の URL でアクセス可能になります:
 ```
-https://yt-glaceon.github.io/discord-voice-roulette/?client_id=YOUR_CLIENT_ID
+https://yt-glaceon.github.io/roulette/?client_id=YOUR_CLIENT_ID
 ```
 
 **重要**: URL に `?client_id=YOUR_CLIENT_ID` パラメータを必ず追加してください。

@@ -14,7 +14,7 @@ export const config = {
     },
     
     // GitHub Pages の URL
-    // 例: 'https://yt-glaceon.github.io/discord-voice-roulette/callback.html'
+    // 例: 'https://yt-glaceon.github.io/roulette/callback.html'
     redirectUri: window.location.origin + window.location.pathname.replace(/\/$/, '') + '/callback.html',
     
     // 必要な Discord API スコープ

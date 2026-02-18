@@ -20,14 +20,12 @@ export class AuthModule {
             throw new Error('Discord Client ID が設定されていません');
         }
 
-        // Client ID を callback URL に含める
-        const callbackUrl = config.redirectUri + 
-            (config.redirectUri.includes('?') ? '&' : '?') + 
-            `client_id=${clientId}`;
+        // Client ID を一時保存（callback で使用）
+        localStorage.setItem('temp_client_id', clientId);
 
         const params = new URLSearchParams({
             client_id: clientId,
-            redirect_uri: callbackUrl,
+            redirect_uri: config.redirectUri,
             response_type: 'token',
             scope: config.scopes.join(' ')
         });
