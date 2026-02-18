@@ -14,9 +14,20 @@ export class AuthModule {
      * Implicit Grant フローを使用
      */
     initiateAuth() {
+        const clientId = config.discordClientId;
+        
+        if (!clientId) {
+            throw new Error('Discord Client ID が設定されていません');
+        }
+
+        // Client ID を callback URL に含める
+        const callbackUrl = config.redirectUri + 
+            (config.redirectUri.includes('?') ? '&' : '?') + 
+            `client_id=${clientId}`;
+
         const params = new URLSearchParams({
-            client_id: config.discordClientId,
-            redirect_uri: config.redirectUri,
+            client_id: clientId,
+            redirect_uri: callbackUrl,
             response_type: 'token',
             scope: config.scopes.join(' ')
         });

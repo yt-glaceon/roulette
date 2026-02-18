@@ -26,6 +26,16 @@ class AppController {
      */
     async initialize() {
         try {
+            // Client ID の確認
+            const clientId = this.getClientId();
+            if (!clientId) {
+                this.ui.showError(
+                    'Discord Client ID が指定されていません。\n' +
+                    'URL に ?client_id=YOUR_CLIENT_ID を追加してください。'
+                );
+                return;
+            }
+
             // イベントリスナーを設定
             this.setupEventListeners();
 
@@ -44,6 +54,15 @@ class AppController {
             console.error('[AppController] 初期化エラー:', error);
             this.ui.showError('アプリケーションの初期化に失敗しました。');
         }
+    }
+
+    /**
+     * URL パラメータから Client ID を取得
+     * @returns {string|null} Client ID
+     */
+    getClientId() {
+        const params = new URLSearchParams(window.location.search);
+        return params.get('client_id');
     }
 
     /**
@@ -114,6 +133,14 @@ class AppController {
      */
     startAuth() {
         try {
+            const clientId = this.getClientId();
+            if (!clientId) {
+                this.ui.showError(
+                    'Discord Client ID が指定されていません。\n' +
+                    'URL に ?client_id=YOUR_CLIENT_ID を追加してください。'
+                );
+                return;
+            }
             this.auth.initiateAuth();
         } catch (error) {
             console.error('[AppController] 認証開始エラー:', error);

@@ -43,24 +43,29 @@
     <script type="module">
         import { AuthModule } from './js/auth.js';
 
-        // URL からコードを取得
+        // URL からトークンを取得
         const urlParams = new URLSearchParams(window.location.hash.substring(1));
         const accessToken = urlParams.get('access_token');
         const error = urlParams.get('error');
 
+        // Client ID を保持
+        const searchParams = new URLSearchParams(window.location.search);
+        const clientId = searchParams.get('client_id');
+        const redirectUrl = clientId ? `/?client_id=${clientId}` : '/';
+
         if (error) {
             alert('認証に失敗しました: ' + error);
-            window.location.href = '/';
+            window.location.href = redirectUrl;
         } else if (accessToken) {
             // トークンを保存
             const auth = new AuthModule();
             localStorage.setItem('discord_token', accessToken);
             
-            // メインページにリダイレクト
-            window.location.href = '/';
+            // メインページにリダイレクト（Client ID を保持）
+            window.location.href = redirectUrl;
         } else {
             alert('認証情報が見つかりませんでした');
-            window.location.href = '/';
+            window.location.href = redirectUrl;
         }
     </script>
 </body>

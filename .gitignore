@@ -3,3 +3,6 @@ coverage/
 .DS_Store
 *.log
 .env
+
+# Client ID を含む設定ファイルは除外しない
+# （URL パラメータで指定するため）

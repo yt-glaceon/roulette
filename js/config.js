@@ -1,11 +1,21 @@
 // Discord アプリケーション設定
 export const config = {
-    // Discord Developer Portal で取得した Client ID を設定してください
-    discordClientId: 'YOUR_CLIENT_ID_HERE',
+    // Client ID は URL パラメータから取得
+    // 例: https://yourusername.github.io/discord-voice-roulette/?client_id=YOUR_CLIENT_ID
+    get discordClientId() {
+        const params = new URLSearchParams(window.location.search);
+        const clientId = params.get('client_id');
+        
+        if (!clientId) {
+            console.warn('Client ID が指定されていません。URL に ?client_id=YOUR_CLIENT_ID を追加してください。');
+        }
+        
+        return clientId;
+    },
     
-    // GitHub Pages の URL に合わせて変更してください
-    // 例: 'https://yourusername.github.io/discord-voice-roulette/callback.html'
-    redirectUri: window.location.origin + '/callback.html',
+    // GitHub Pages の URL
+    // 例: 'https://yt-glaceon.github.io/discord-voice-roulette/callback.html'
+    redirectUri: window.location.origin + window.location.pathname.replace(/\/$/, '') + '/callback.html',
     
     // 必要な Discord API スコープ
     scopes: ['guilds', 'guilds.members.read'],
