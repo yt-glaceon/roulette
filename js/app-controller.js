@@ -26,8 +26,12 @@ class AppController {
      */
     async initialize() {
         try {
+            console.log('[AppController] 初期化開始');
+            
             // Client ID の確認
             const clientId = this.getClientId();
+            console.log('[AppController] Client ID:', clientId);
+            
             if (!clientId) {
                 this.ui.showError(
                     'Discord Client ID が指定されていません。\n' +
@@ -40,6 +44,11 @@ class AppController {
             this.setupEventListeners();
 
             // 認証状態を確認
+            const isAuth = this.auth.isAuthenticated();
+            const token = this.auth.getToken();
+            console.log('[AppController] 認証状態:', isAuth);
+            console.log('[AppController] トークン:', token ? 'あり（長さ: ' + token.length + '）' : 'なし');
+            
             if (this.auth.isAuthenticated()) {
                 const token = this.auth.getToken();
                 this.discordClient = new DiscordClient(token);
