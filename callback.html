@@ -50,7 +50,7 @@
 
         // Client ID を localStorage から取得（認証前に保存されている）
         const clientId = localStorage.getItem('temp_client_id');
-        const redirectUrl = clientId ? `/?client_id=${clientId}` : '/';
+        const redirectUrl = clientId ? `/roulette/?client_id=${clientId}` : '/roulette/';
 
         if (error) {
             alert('認証に失敗しました: ' + error);
