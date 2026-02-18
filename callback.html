@@ -40,9 +40,8 @@
         <p>Discord 認証を処理しています</p>
     </div>
 
-    <script type="module">
-        import { AuthModule } from './js/auth.js';
-
+    <script>
+        console.log('[Callback] スクリプト開始');
         console.log('[Callback] URL hash:', window.location.hash);
         console.log('[Callback] URL search:', window.location.search);
 
@@ -63,13 +62,13 @@
             : 'https://yt-glaceon.github.io/roulette/';
 
         if (error) {
+            console.error('[Callback] エラーが発生:', error);
             alert('認証に失敗しました: ' + error);
             localStorage.removeItem('temp_client_id');
             window.location.href = redirectUrl;
         } else if (accessToken) {
             // トークンを保存
             console.log('[Callback] トークンを保存します');
-            const auth = new AuthModule();
             localStorage.setItem('discord_token', accessToken);
             
             // 保存確認
@@ -80,9 +79,12 @@
             
             console.log('[Callback] リダイレクト先:', redirectUrl);
             
-            // メインページにリダイレクト（Client ID を保持）
-            window.location.href = redirectUrl;
+            // 少し待ってからリダイレクト（ログ確認のため）
+            setTimeout(() => {
+                window.location.href = redirectUrl;
+            }, 1000);
         } else {
+            console.error('[Callback] トークンもエラーもありません');
             alert('認証情報が見つかりませんでした');
             localStorage.removeItem('temp_client_id');
             window.location.href = redirectUrl;
