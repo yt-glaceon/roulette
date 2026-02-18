@@ -43,14 +43,24 @@
     <script type="module">
         import { AuthModule } from './js/auth.js';
 
+        console.log('[Callback] URL hash:', window.location.hash);
+        console.log('[Callback] URL search:', window.location.search);
+
         // URL からトークンを取得
         const urlParams = new URLSearchParams(window.location.hash.substring(1));
         const accessToken = urlParams.get('access_token');
         const error = urlParams.get('error');
 
+        console.log('[Callback] Access Token:', accessToken ? 'あり（長さ: ' + accessToken.length + '）' : 'なし');
+        console.log('[Callback] Error:', error);
+
         // Client ID を localStorage から取得（認証前に保存されている）
         const clientId = localStorage.getItem('temp_client_id');
-        const redirectUrl = clientId ? `/roulette/?client_id=${clientId}` : '/roulette/';
+        console.log('[Callback] Client ID:', clientId);
+
+        const redirectUrl = clientId 
+            ? `https://yt-glaceon.github.io/roulette/?client_id=${clientId}` 
+            : 'https://yt-glaceon.github.io/roulette/';
 
         if (error) {
             alert('認証に失敗しました: ' + error);
@@ -58,9 +68,17 @@
             window.location.href = redirectUrl;
         } else if (accessToken) {
             // トークンを保存
+            console.log('[Callback] トークンを保存します');
             const auth = new AuthModule();
             localStorage.setItem('discord_token', accessToken);
+            
+            // 保存確認
+            const savedToken = localStorage.getItem('discord_token');
+            console.log('[Callback] 保存されたトークン:', savedToken ? 'あり' : 'なし');
+            
             localStorage.removeItem('temp_client_id');
+            
+            console.log('[Callback] リダイレクト先:', redirectUrl);
             
             // メインページにリダイレクト（Client ID を保持）
             window.location.href = redirectUrl;

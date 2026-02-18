@@ -28,11 +28,15 @@ export class DiscordClient {
             ...options.headers
         };
 
+        console.log('[DiscordClient] リクエスト:', url);
+
         try {
             const response = await fetch(url, {
                 ...options,
                 headers
             });
+
+            console.log('[DiscordClient] レスポンスステータス:', response.status);
 
             // レート制限の処理
             if (response.status === 429) {
@@ -53,10 +57,13 @@ export class DiscordClient {
 
             // 認証エラー
             if (response.status === 401) {
+                const errorData = await response.json().catch(() => ({}));
+                console.error('[DiscordClient] 認証エラー:', errorData);
                 throw {
                     type: 'AUTH_ERROR',
                     status: 401,
-                    message: '認証に失敗しました。再度ログインしてください。'
+                    message: '認証に失敗しました。再度ログインしてください。',
+                    details: errorData
                 };
             }
 
