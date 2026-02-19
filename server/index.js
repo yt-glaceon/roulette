@@ -118,8 +118,21 @@ setInterval(() => {
 }, 60000); // 1分ごと
 
 // CORS 設定
+const allowedOrigins = [
+  'https://yt-glaceon.github.io',
+  'http://localhost:5500',
+  'http://127.0.0.1:5500'
+];
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || '*',
+  origin: (origin, callback) => {
+    // オリジンが許可リストに含まれているか、またはオリジンがない場合（同一オリジンリクエスト）
+    if (!origin || allowedOrigins.some(allowed => origin.startsWith(allowed))) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   methods: ['GET'],
 }));
 
