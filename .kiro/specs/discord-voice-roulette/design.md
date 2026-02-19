@@ -40,13 +40,6 @@ sequenceDiagram
     participant B as ブラウザ
     participant D as Discord API
     participant S as ローカルストレージ
-
-    U->>B: 認証ボタンクリック
-    B->>D: OAuth2 認証リクエスト
-    D->>B: 認証コード
-    B->>D: トークン交換
-    D->>B: アクセストークン
-    B->>S: トークン保存
     
     U->>B: サーバー選択
     B->>D: ギルド情報取得
@@ -58,59 +51,16 @@ sequenceDiagram
     
     U->>B: ルーレット実行
     B->>B: ランダム選出処理
+    B->>B: ルーレットホイールアニメーション
     B->>U: 結果表示
+    B->>S: 履歴保存
 ```
+
+注: 将来的に Discord OAuth2 認証を実装する場合、このフローの前に認証ステップが追加されます。
 
 ## コンポーネントとインターフェース
 
-### 1. 認証モジュール (AuthModule)
-
-Discord OAuth2 認証フローを管理します。
-
-#### 責務
-- OAuth2 認証フローの開始
-- 認証コードの受け取りとトークン交換
-- アクセストークンの保存と管理
-- ログアウト処理
-
-#### インターフェース
-
-```javascript
-class AuthModule {
-  /**
-   * Discord OAuth2 認証を開始
-   * @returns {Promise<void>}
-   */
-  async initiateAuth()
-
-  /**
-   * OAuth2 コールバックを処理
-   * @param {string} code - 認証コード
-   * @returns {Promise<string>} アクセストークン
-   */
-  async handleCallback(code)
-
-  /**
-   * 保存されたトークンを取得
-   * @returns {string|null} アクセストークン
-   */
-  getToken()
-
-  /**
-   * 認証状態を確認
-   * @returns {boolean} 認証済みかどうか
-   */
-  isAuthenticated()
-
-  /**
-   * ログアウト処理
-   * @returns {void}
-   */
-  logout()
-}
-```
-
-### 2. Discord API クライアント (DiscordClient)
+### 1. Discord API クライアント (DiscordClient)
 
 Discord REST API との通信を担当します。
 
@@ -161,7 +111,7 @@ class DiscordClient {
 }
 ```
 
-### 3. ルーレットエンジン (RouletteEngine)
+### 2. ルーレットエンジン (RouletteEngine)
 
 メンバーのランダム選出ロジックを実装します。
 
@@ -200,7 +150,7 @@ class RouletteEngine {
 }
 ```
 
-### 4. UI コントローラー (UIController)
+### 3. UI コントローラー (UIController)
 
 ユーザーインターフェースの状態管理と更新を担当します。
 
@@ -209,17 +159,12 @@ class RouletteEngine {
 - ユーザー入力の処理
 - 画面遷移の制御
 - アニメーション効果の管理
+- ルーレットホイールコンポーネントの管理
 
 #### インターフェース
 
 ```javascript
 class UIController {
-  /**
-   * 認証画面を表示
-   * @returns {void}
-   */
-  showAuthScreen()
-
   /**
    * ギルド選択画面を表示
    * @param {Guild[]} guilds - ギルドリスト
@@ -264,6 +209,7 @@ class UIController {
 
   /**
    * ルーレットアニメーションを実行
+   * RouletteWheelコンポーネントを使用して円グラフ型のルーレットアニメーションを表示
    * @param {Member[]} members - 全メンバー
    * @param {Member[]} selected - 選出されたメンバー
    * @returns {Promise<void>}
@@ -272,7 +218,78 @@ class UIController {
 }
 ```
 
-### 5. アプリケーションコントローラー (AppController)
+### 5. RouletteWheel コンポーネント
+
+円グラフ型のルーレットホイールを描画し、回転アニメーションを実行します。
+
+#### 責務
+- Canvas を使用したルーレットホイールの描画
+- メンバーごとのセクション（扇形）の描画
+- 回転アニメーションの実行
+- 選出されたメンバーへの針の停止
+
+#### インターフェース
+
+```javascript
+class RouletteWheel {
+  /**
+   * コンストラクタ
+   * @param {HTMLElement} container - ルーレットを表示するコンテナ要素
+   */
+  constructor(container)
+
+  /**
+   * ルーレットを初期化
+   * @param {Member[]} members - メンバーリスト
+   * @returns {void}
+   */
+  initialize(members)
+
+  /**
+   * ルーレットを描画
+   * @returns {void}
+   */
+  draw()
+
+  /**
+   * 針を描画（上部に固定）
+   * @param {number} centerX - 中心X座標
+   * @param {number} centerY - 中心Y座標
+   * @param {number} radius - 半径
+   * @returns {void}
+   */
+  drawPointer(centerX, centerY, radius)
+
+  /**
+   * ルーレットを回転させて選出されたメンバーに停止
+   * @param {Member} selectedMember - 選出されたメンバー
+   * @returns {Promise<void>}
+   */
+  async spin(selectedMember)
+
+  /**
+   * アニメーションを停止
+   * @returns {void}
+   */
+  stop()
+
+  /**
+   * ルーレットを破棄
+   * @returns {void}
+   */
+  destroy()
+}
+```
+
+#### 実装の特徴
+
+- **Canvas API**: HTML5 Canvas を使用した高性能な描画
+- **カラフルな表示**: メンバーごとに異なる色のセクションを表示
+- **スムーズなアニメーション**: イージング関数を使用した減速アニメーション
+- **複数回転**: 3〜5回転してから選出されたメンバーに停止
+- **固定された針**: 上部に赤い三角形の針を固定し、ホイールが回転
+
+### 6. アプリケーションコントローラー (AppController)
 
 アプリケーション全体のフローを制御します。
 
@@ -297,12 +314,6 @@ class AppController {
   async initialize()
 
   /**
-   * 認証フローを開始
-   * @returns {Promise<void>}
-   */
-  async startAuth()
-
-  /**
    * ギルド選択を処理
    * @param {string} guildId - 選択されたギルド ID
    * @returns {Promise<void>}
@@ -322,14 +333,43 @@ class AppController {
    * @returns {Promise<void>}
    */
   async handleRouletteExecution(count)
-
-  /**
-   * ログアウトを処理
-   * @returns {void}
-   */
-  handleLogout()
 }
 ```
+
+## 現在の実装状況
+
+### 実装済み機能
+
+1. **チャネル選択からの開始**: 認証機能は実装されておらず、アプリケーションはチャネル選択画面から開始します
+2. **ルーレットホイールアニメーション**: RouletteWheel コンポーネントが実装済みで、円グラフ型の回転アニメーションが動作します
+3. **UIController の統合**: UIController に animateRoulette メソッドが実装され、RouletteWheel コンポーネントを使用しています
+
+### 将来の拡張
+
+#### Discord OAuth2 認証（未実装）
+
+将来的に Discord OAuth2 認証を実装する場合、以下のコンポーネントとフローが必要になります：
+
+**AuthModule（認証モジュール）**:
+- OAuth2 認証フローの開始
+- 認証コードの受け取りとトークン交換
+- アクセストークンの保存と管理
+- ログアウト処理
+
+**認証フロー**:
+1. ユーザーが認証ボタンをクリック
+2. Discord OAuth2 認証ページにリダイレクト
+3. 認証コード取得とトークン交換
+4. トークンをローカルストレージに保存
+5. ギルド選択画面へ遷移
+
+**必要な変更**:
+- AuthModule クラスの実装
+- 認証画面の追加
+- AppController への認証フロー統合（startAuth、handleLogout メソッド）
+- DiscordClient へのトークン渡し
+
+現在の実装では、これらの認証機能は省略されており、チャネル選択から直接開始する簡易版として動作しています。
 
 ## データモデル
 
@@ -383,42 +423,41 @@ class AppController {
 
 プロパティとは、システムのすべての有効な実行において真であるべき特性や振る舞いのことです。これは、人間が読める仕様と機械で検証可能な正確性保証の橋渡しとなります。
 
-
-### プロパティ 1: 認証成功時のトークン保存
-
-*任意の*有効な Discord 認証レスポンスに対して、システムはアクセストークンをローカルストレージに保存し、そのトークンを使用してギルドリストを取得できる
-
-**検証: 要件 1.2, 1.3, 7.1**
-
-### プロパティ 2: サーバー選択時のチャネルリスト取得
+### プロパティ 1: サーバー選択時のチャネルリスト取得
 
 *任意の*有効なギルド ID に対して、システムはそのギルドに属するボイスチャネルのリストを取得し、表示する
 
 **検証: 要件 1.4**
 
-### プロパティ 3: チャネル選択時のメンバーリスト取得
+### プロパティ 2: チャネル選択時のメンバーリスト取得
 
 *任意の*有効なチャネル ID に対して、システムはそのチャネルに参加している全メンバーのリストを取得し、各メンバーの表示名とアバター画像を含めて表示する
 
 **検証: 要件 2.1, 2.2**
 
-### プロパティ 4: 選出人数のバリデーション
+### プロパティ 3: 選出人数のバリデーション
 
 *任意の*入力値に対して、システムは 1 以上かつメンバー総数以下の整数値のみを有効とし、範囲外の値は拒否してエラーメッセージを表示する
 
 **検証: 要件 3.1, 3.2**
 
-### プロパティ 5: ルーレット選出の正確性
+### プロパティ 4: ルーレット選出の正確性
 
 *任意の*メンバーリストと有効な選出人数に対して、システムは正確に指定された人数のメンバーを選出し、重複なく返す
 
 **検証: 要件 3.3**
 
-### プロパティ 6: 選出確率の均等性
+### プロパティ 5: 選出確率の均等性
 
 *任意の*メンバーリストに対して、十分な回数のルーレット実行を行った場合、各メンバーが選出される確率は統計的に均等である
 
 **検証: 要件 3.4**
+
+### プロパティ 6: ルーレットホイールアニメーション
+
+*任意の*メンバーリストと選出されたメンバーに対して、ルーレットホイールは複数回転してから選出されたメンバーの位置で停止する
+
+**検証: 要件 3.5**
 
 ### プロパティ 7: 結果表示の完全性
 
@@ -440,9 +479,9 @@ class AppController {
 
 ### プロパティ 10: API エラーハンドリング
 
-*任意の*API 呼び出しエラー（ネットワークエラー、認証エラー、レート制限など）に対して、システムは適切なエラーメッセージを表示し、再試行オプションを提供する
+*任意の*API 呼び出しエラー（ネットワークエラー、レート制限など）に対して、システムは適切なエラーメッセージを表示し、再試行オプションを提供する
 
-**検証: 要件 1.5, 2.4, 8.1, 8.2**
+**検証: 要件 2.4, 8.1, 8.2**
 
 ### プロパティ 11: レート制限処理
 
@@ -450,13 +489,7 @@ class AppController {
 
 **検証: 要件 8.3**
 
-### プロパティ 12: ログアウト時の認証情報削除
-
-*任意の*認証済み状態からログアウトを実行すると、システムはローカルストレージから全ての認証情報を削除し、認証前の状態に戻る
-
-**検証: 要件 7.3**
-
-### プロパティ 13: ユーザーフィードバックの提供
+### プロパティ 12: ユーザーフィードバックの提供
 
 *任意の*ユーザー操作（ボタンクリック、データ取得など）に対して、システムは適切なフィードバック（ローディング表示、成功メッセージ、エラーメッセージ）を提供する
 
@@ -466,45 +499,24 @@ class AppController {
 
 ### エラーの分類
 
-1. **認証エラー**
-   - OAuth2 認証失敗
-   - トークンの有効期限切れ
-   - 権限不足
-
-2. **API エラー**
+1. **API エラー**
    - ネットワークエラー
    - レート制限
    - 無効なリクエスト
    - サーバーエラー（5xx）
+   - 権限不足
 
-3. **バリデーションエラー**
+2. **バリデーションエラー**
    - 無効な選出人数
    - 空のメンバーリスト
 
-4. **クライアントエラー**
+3. **クライアントエラー**
    - ローカルストレージアクセスエラー
    - クリップボードアクセスエラー
 
 ### エラーハンドリング戦略
 
-#### 1. 認証エラー
-
-```javascript
-try {
-  const token = await authModule.handleCallback(code);
-} catch (error) {
-  if (error.type === 'AUTH_FAILED') {
-    uiController.showError('認証に失敗しました。もう一度お試しください。');
-    uiController.showAuthScreen();
-  } else if (error.type === 'TOKEN_EXPIRED') {
-    uiController.showError('セッションの有効期限が切れました。再度ログインしてください。');
-    authModule.logout();
-    uiController.showAuthScreen();
-  }
-}
-```
-
-#### 2. API エラー
+#### 1. API エラー
 
 ```javascript
 try {
@@ -527,7 +539,7 @@ try {
 }
 ```
 
-#### 3. バリデーションエラー
+#### 2. バリデーションエラー
 
 ```javascript
 try {
@@ -541,7 +553,7 @@ try {
 }
 ```
 
-#### 4. クライアントエラー
+#### 3. クライアントエラー
 
 ```javascript
 try {
@@ -732,13 +744,33 @@ describe('RouletteEngine', () => {
   });
 });
 
-describe('AuthModule', () => {
-  test('ログアウト時にローカルストレージから認証情報が削除される', () => {
-    localStorage.setItem('discord_token', 'test_token');
-    const auth = new AuthModule();
-    auth.logout();
+describe('RouletteWheel', () => {
+  test('初期化時にメンバー数に応じたセクションが作成される', () => {
+    const container = document.createElement('div');
+    const members = [
+      { id: '1', username: 'user1', displayName: 'User 1' },
+      { id: '2', username: 'user2', displayName: 'User 2' },
+      { id: '3', username: 'user3', displayName: 'User 3' }
+    ];
+    const wheel = new RouletteWheel(container);
+    wheel.initialize(members);
     
-    expect(localStorage.getItem('discord_token')).toBeNull();
+    expect(wheel.members.length).toBe(3);
+    expect(container.querySelector('canvas')).not.toBeNull();
+  });
+
+  test('spin実行時に選出されたメンバーに停止する', async () => {
+    const container = document.createElement('div');
+    const members = [
+      { id: '1', username: 'user1', displayName: 'User 1' },
+      { id: '2', username: 'user2', displayName: 'User 2' }
+    ];
+    const wheel = new RouletteWheel(container);
+    wheel.initialize(members);
+    
+    await wheel.spin(members[0]);
+    
+    expect(wheel.isSpinning).toBe(false);
   });
 });
 
@@ -764,26 +796,30 @@ describe('DiscordClient', () => {
 
 GitHub Pages へのデプロイ後、以下の統合テストを手動で実行します：
 
-1. **認証フロー**: OAuth2 認証が正常に完了すること
-2. **エンドツーエンドフロー**: 認証 → サーバー選択 → チャネル選択 → ルーレット実行 → 結果表示
-3. **クロスブラウザテスト**: Chrome、Firefox、Safari、Edge での動作確認
-4. **モバイルテスト**: iOS Safari、Android Chrome での動作確認
-5. **パフォーマンステスト**: 初期ロード時間が 3 秒以内であること
+1. **エンドツーエンドフロー**: サーバー選択 → チャネル選択 → ルーレット実行 → アニメーション → 結果表示
+2. **クロスブラウザテスト**: Chrome、Firefox、Safari、Edge での動作確認
+3. **モバイルテスト**: iOS Safari、Android Chrome での動作確認
+4. **パフォーマンステスト**: 初期ロード時間が 3 秒以内であること
+5. **ルーレットアニメーション**: スムーズな回転と正確な停止位置
 
 ### テストカバレッジ目標
 
 - ユニットテストカバレッジ: 80% 以上
-- プロパティテストカバレッジ: すべての正確性プロパティ（13 個）
+- プロパティテストカバレッジ: すべての正確性プロパティ（12 個）
 - 統合テスト: 主要フロー 5 パターン
 
 ## 実装上の注意事項
 
 ### Discord API の制約
 
+1. **レート制限**: 1 秒あたり 5 リクエスト（グローバル）、エンドポイントごとの制限あり
+2. **CORS**: Discord API は CORS をサポートしているため、直接呼び出し可能
+
+### 将来の認証実装時の考慮事項
+
+Discord OAuth2 認証を実装する場合：
 1. **OAuth2 フロー**: Implicit Grant フローを使用（クライアントサイドのみ）
 2. **必要なスコープ**: `guilds`, `guilds.members.read`
-3. **レート制限**: 1 秒あたり 5 リクエスト（グローバル）、エンドポイントごとの制限あり
-4. **CORS**: Discord API は CORS をサポートしているため、直接呼び出し可能
 
 ### ブラウザ互換性
 
@@ -814,7 +850,19 @@ GitHub Pages へのデプロイ後、以下の統合テストを手動で実行�
 3. Branch: main / root
 4. カスタムドメイン（オプション）
 
-### Discord アプリケーション設定
+### 環境変数
+
+```javascript
+// config.js
+export const config = {
+  // 現在の実装では認証を使用していないため、設定は最小限
+  apiBaseUrl: 'https://discord.com/api/v10'
+};
+```
+
+### 将来の認証実装時の設定
+
+Discord OAuth2 認証を実装する場合、以下の設定が必要になります：
 
 1. Discord Developer Portal でアプリケーションを作成
 2. OAuth2 設定:
@@ -822,14 +870,13 @@ GitHub Pages へのデプロイ後、以下の統合テストを手動で実行�
    - Scopes: `guilds`, `guilds.members.read`
 3. Client ID を環境変数または設定ファイルに保存
 
-### 環境変数
-
 ```javascript
-// config.js
+// config.js（認証実装時）
 export const config = {
   discordClientId: 'YOUR_CLIENT_ID',
   redirectUri: 'https://yourusername.github.io/discord-voice-roulette/callback.html',
-  scopes: ['guilds', 'guilds.members.read']
+  scopes: ['guilds', 'guilds.members.read'],
+  apiBaseUrl: 'https://discord.com/api/v10'
 };
 ```
 
@@ -838,22 +885,26 @@ export const config = {
 ```
 discord-voice-roulette/
 ├── index.html
-├── callback.html
 ├── css/
 │   └── style.css
 ├── js/
 │   ├── config.js
-│   ├── auth.js
 │   ├── discord-client.js
 │   ├── roulette-engine.js
+│   ├── roulette-wheel.js
 │   ├── ui-controller.js
 │   └── app-controller.js
 ├── tests/
 │   ├── unit/
-│   │   ├── auth.test.js
 │   │   ├── roulette-engine.test.js
+│   │   ├── roulette-wheel.test.js
 │   │   └── discord-client.test.js
 │   └── property/
 │       └── roulette.property.test.js
 └── README.md
 ```
+
+注: 将来的に Discord OAuth2 認証を実装する場合、以下のファイルが追加されます：
+- `callback.html` - OAuth2 コールバック用ページ
+- `js/auth.js` - 認証モジュール
+- `tests/unit/auth.test.js` - 認証モジュールのテスト
