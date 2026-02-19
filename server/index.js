@@ -87,7 +87,8 @@ client.on('interactionCreate', async (interaction) => {
 
       // URL を生成
       const frontendUrl = process.env.FRONTEND_URL || 'http://127.0.0.1:5500';
-      const rouletteUrl = `${frontendUrl}?token=${token}`;
+      const backendUrl = process.env.BACKEND_URL || 'http://localhost:3000';
+      const rouletteUrl = `${frontendUrl}?token=${token}&api_url=${backendUrl}`;
 
       await interaction.reply({
         content: `🎰 ボイスルーレットの URL を生成しました！\n\n${rouletteUrl}\n\n⏰ この URL は1時間有効です。`,
