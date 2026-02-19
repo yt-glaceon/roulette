@@ -1,27 +1,19 @@
-// Discord アプリケーション設定
+// アプリケーション設定
 export const config = {
-    // Client ID は URL パラメータから取得
-    // 例: https://yt-glaceon.github.io/roulette/?client_id=YOUR_CLIENT_ID
-    get discordClientId() {
+    // バックエンドサーバーのURL
+    // 開発環境: http://localhost:3000
+    // 本番環境: Render のデプロイURL（例: https://your-app.onrender.com）
+    get apiEndpoint() {
+        // URL パラメータから API エンドポイントを取得可能にする
         const params = new URLSearchParams(window.location.search);
-        const clientId = params.get('client_id');
+        const apiUrl = params.get('api_url');
         
-        if (!clientId) {
-            console.warn('Client ID が指定されていません。URL に ?client_id=YOUR_CLIENT_ID を追加してください。');
+        if (apiUrl) {
+            return apiUrl;
         }
         
-        return clientId;
-    },
-    
-    // GitHub Pages のリダイレクト URI（固定値）
-    redirectUri: 'https://yt-glaceon.github.io/roulette/callback.html',
-    
-    // 必要な Discord API スコープ
-    scopes: ['guilds', 'guilds.members.read'],
-    
-    // Discord API エンドポイント
-    apiEndpoint: 'https://discord.com/api/v10',
-    
-    // OAuth2 認証エンドポイント
-    authEndpoint: 'https://discord.com/api/oauth2/authorize'
+        // デフォルトは開発環境のURL
+        // 本番環境では ?api_url=https://your-app.onrender.com を URL に追加
+        return 'http://localhost:3000';
+    }
 };

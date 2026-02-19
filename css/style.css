@@ -49,6 +49,11 @@ body {
     display: none;
 }
 
+/* 汎用非表示クラス */
+.hidden {
+    display: none !important;
+}
+
 /* タイポグラフィ */
 h1 {
     font-size: 2.5rem;
@@ -76,6 +81,10 @@ p {
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s;
+    min-height: 48px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .btn-primary {
@@ -91,7 +100,6 @@ p {
 .btn-secondary {
     background: var(--secondary-color);
     color: white;
-    margin-bottom: 1rem;
 }
 
 .btn-secondary:hover {
@@ -281,6 +289,7 @@ p {
     gap: var(--spacing);
     justify-content: center;
     flex-wrap: wrap;
+    align-items: center;
 }
 
 /* ローディング */

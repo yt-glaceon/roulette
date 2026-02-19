@@ -1,17 +1,13 @@
 import { config } from './config.js';
 
 /**
- * Discord API クライアント
- * Discord REST API との通信を担当
+ * Discord API クライアント（バックエンド経由・トークンベース）
+ * バックエンドサーバーの REST API と通信
  */
 export class DiscordClient {
-    /**
-     * @param {string} token - アクセストークン
-     */
-    constructor(token) {
-        this.token = token;
+    constructor(accessToken) {
         this.apiEndpoint = config.apiEndpoint;
-        this.rateLimitRetry = true;
+        this.accessToken = accessToken;
     }
 
     /**
@@ -21,76 +17,53 @@ export class DiscordClient {
      * @returns {Promise<Object>} レスポンス
      */
     async request(endpoint, options = {}) {
-        const url = `${this.apiEndpoint}${endpoint}`;
-        const headers = {
-            'Authorization': `Bearer ${this.token}`,
-            'Content-Type': 'application/json',
-            ...options.headers
-        };
-
-        console.log('[DiscordClient] リクエスト:', url);
+        const url = `${this.apiEndpoint}${endpoint}${endpoint.includes('?') ? '&' : '?'}token=${this.accessToken}`;
 
         try {
             const response = await fetch(url, {
                 ...options,
-                headers
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...options.headers
+                }
             });
 
-            console.log('[DiscordClient] レスポンスステータス:', response.status);
-
-            // レート制限の処理
-            if (response.status === 429) {
-                const retryAfter = parseInt(response.headers.get('Retry-After') || '5');
-                
-                if (this.rateLimitRetry) {
-                    console.warn(`[DiscordClient] レート制限: ${retryAfter}秒後に再試行`);
-                    await this.sleep(retryAfter * 1000);
-                    return this.request(endpoint, options);
-                }
-                
-                throw {
-                    type: 'RATE_LIMIT',
-                    retryAfter,
-                    message: `レート制限に達しました。${retryAfter}秒後に再試行してください。`
-                };
-            }
-
-            // 認証エラー
-            if (response.status === 401) {
-                const errorData = await response.json().catch(() => ({}));
-                console.error('[DiscordClient] 認証エラー:', errorData);
-                throw {
-                    type: 'AUTH_ERROR',
-                    status: 401,
-                    message: '認証に失敗しました。再度ログインしてください。',
-                    details: errorData
-                };
-            }
-
-            // 権限エラー
-            if (response.status === 403) {
-                throw {
-                    type: 'PERMISSION_ERROR',
-                    status: 403,
-                    message: 'このリソースにアクセスする権限がありません。'
-                };
-            }
-
-            // サーバーエラー
-            if (response.status >= 500) {
-                throw {
-                    type: 'SERVER_ERROR',
-                    status: response.status,
-                    message: 'Discord サーバーでエラーが発生しました。'
-                };
-            }
-
-            // その他のエラー
+            // エラーハンドリング
             if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                
+                if (response.status === 401) {
+                    throw {
+                        type: 'AUTH_ERROR',
+                        status: 401,
+                        message: errorData.error || 'トークンが無効または期限切れです。',
+                        details: errorData
+                    };
+                }
+
+                if (response.status === 404) {
+                    throw {
+                        type: 'NOT_FOUND',
+                        status: 404,
+                        message: 'リソースが見つかりません。',
+                        details: errorData
+                    };
+                }
+
+                if (response.status >= 500) {
+                    throw {
+                        type: 'SERVER_ERROR',
+                        status: response.status,
+                        message: 'サーバーでエラーが発生しました。',
+                        details: errorData
+                    };
+                }
+
                 throw {
                     type: 'API_ERROR',
                     status: response.status,
-                    message: `API エラー: ${response.status}`
+                    message: errorData.error || `API エラー: ${response.status}`,
+                    details: errorData
                 };
             }
 
@@ -100,7 +73,7 @@ export class DiscordClient {
             if (error instanceof TypeError) {
                 throw {
                     type: 'NETWORK_ERROR',
-                    message: 'ネットワークエラーが発生しました。接続を確認してください。',
+                    message: 'ネットワークエラーが発生しました。バックエンドサーバーに接続できません。',
                     originalError: error
                 };
             }
@@ -111,27 +84,25 @@ export class DiscordClient {
     }
 
     /**
-     * 指定時間待機
-     * @param {number} ms - ミリ秒
+     * トークンを検証
+     * @returns {Promise<Object>} 検証結果
      */
-    sleep(ms) {
-        return new Promise(resolve => setTimeout(resolve, ms));
+    async validateToken() {
+        try {
+            return await this.request('/api/validate-token');
+        } catch (error) {
+            console.error('[DiscordClient] トークン検証エラー:', error);
+            throw error;
+        }
     }
 
     /**
-     * ユーザーがアクセス可能なギルドを取得
-     * @returns {Promise<Array>} ギルドリスト
+     * ギルド情報を取得
+     * @returns {Promise<Object>} ギルド情報
      */
-    async getGuilds() {
+    async getGuild() {
         try {
-            const guilds = await this.request('/users/@me/guilds');
-            return guilds.map(guild => ({
-                id: guild.id,
-                name: guild.name,
-                icon: guild.icon 
-                    ? `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png`
-                    : null
-            }));
+            return await this.request('/api/guild');
         } catch (error) {
             console.error('[DiscordClient] ギルド取得エラー:', error);
             throw error;
@@ -139,23 +110,12 @@ export class DiscordClient {
     }
 
     /**
-     * 指定ギルドのチャネルリストを取得
-     * @param {string} guildId - ギルド ID
+     * ボイスチャネルリストを取得
      * @returns {Promise<Array>} チャネルリスト
      */
-    async getChannels(guildId) {
+    async getChannels() {
         try {
-            const channels = await this.request(`/guilds/${guildId}/channels`);
-            
-            // ボイスチャネル（type: 2）のみをフィルタリング
-            return channels
-                .filter(channel => channel.type === 2)
-                .map(channel => ({
-                    id: channel.id,
-                    name: channel.name,
-                    type: channel.type,
-                    guildId: guildId
-                }));
+            return await this.request('/api/guild/channels');
         } catch (error) {
             console.error('[DiscordClient] チャネル取得エラー:', error);
             throw error;
@@ -164,48 +124,15 @@ export class DiscordClient {
 
     /**
      * 指定ボイスチャネルのメンバーリストを取得
-     * @param {string} guildId - ギルド ID
      * @param {string} channelId - チャネル ID
      * @returns {Promise<Array>} メンバーリスト
      */
-    async getVoiceChannelMembers(guildId, channelId) {
+    async getVoiceChannelMembers(channelId) {
         try {
-            // ギルドの全メンバーを取得
-            const members = await this.request(`/guilds/${guildId}/members?limit=1000`);
-            
-            // ボイスステートを取得してチャネルにいるメンバーをフィルタリング
-            const voiceStates = await this.request(`/guilds/${guildId}/voice-states`);
-            
-            // 指定チャネルにいるメンバーの ID を取得
-            const memberIdsInChannel = voiceStates
-                .filter(state => state.channel_id === channelId)
-                .map(state => state.user_id);
-
-            // メンバー情報を整形
-            return members
-                .filter(member => memberIdsInChannel.includes(member.user.id))
-                .map(member => this.formatMember(member));
+            return await this.request(`/api/guild/channels/${channelId}/members`);
         } catch (error) {
             console.error('[DiscordClient] メンバー取得エラー:', error);
             throw error;
         }
-    }
-
-    /**
-     * メンバー情報を整形
-     * @param {Object} member - Discord API のメンバーオブジェクト
-     * @returns {Object} 整形されたメンバー情報
-     */
-    formatMember(member) {
-        const user = member.user;
-        return {
-            id: user.id,
-            username: user.username,
-            discriminator: user.discriminator || '0',
-            avatar: user.avatar
-                ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`
-                : null,
-            displayName: member.nick || user.global_name || user.username
-        };
     }
 }

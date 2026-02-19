@@ -1,4 +1,3 @@
-import { AuthModule } from './auth.js';
 import { DiscordClient } from './discord-client.js';
 import { RouletteEngine } from './roulette-engine.js';
 import { UIController } from './ui-controller.js';
@@ -10,12 +9,12 @@ import { ResultManager } from './result-manager.js';
  */
 class AppController {
     constructor() {
-        this.auth = new AuthModule();
         this.ui = new UIController();
         this.rouletteEngine = new RouletteEngine();
         this.resultManager = new ResultManager();
         this.discordClient = null;
         
+        this.accessToken = null;
         this.currentGuildId = null;
         this.currentChannelId = null;
         this.currentMembers = [];
@@ -26,77 +25,49 @@ class AppController {
      */
     async initialize() {
         try {
-            console.log('[AppController] 初期化開始');
-            
-            // Client ID の確認
-            const clientId = this.getClientId();
-            console.log('[AppController] Client ID:', clientId);
-            
-            if (!clientId) {
+            // URL パラメータからトークンを取得
+            const params = new URLSearchParams(window.location.search);
+            this.accessToken = params.get('token');
+
+            if (!this.accessToken) {
                 this.ui.showError(
-                    'Discord Client ID が指定されていません。\n' +
-                    'URL に ?client_id=YOUR_CLIENT_ID を追加してください。'
+                    'アクセストークンが必要です。\n' +
+                    'Discord で /roulette コマンドを実行して URL を取得してください。'
                 );
                 return;
             }
 
+            // Discord クライアントを初期化（トークン付き）
+            this.discordClient = new DiscordClient(this.accessToken);
+
+            // トークンを検証
+            const validation = await this.discordClient.validateToken();
+            if (!validation.valid) {
+                this.ui.showError('無効なトークンです。新しい URL を取得してください。');
+                return;
+            }
+
+            this.currentGuildId = validation.guildId;
+
             // イベントリスナーを設定
             this.setupEventListeners();
 
-            // 認証状態を確認
-            const isAuth = this.auth.isAuthenticated();
-            const token = this.auth.getToken();
-            console.log('[AppController] 認証状態:', isAuth);
-            console.log('[AppController] トークン:', token ? 'あり（長さ: ' + token.length + '）' : 'なし');
-            
-            if (this.auth.isAuthenticated()) {
-                const token = this.auth.getToken();
-                this.discordClient = new DiscordClient(token);
-                
-                // ギルド選択画面を表示
-                await this.loadGuilds();
-            } else {
-                // 認証画面を表示
-                this.ui.showAuthScreen();
-            }
+            // ギルド情報を取得してチャネル選択画面を表示
+            await this.loadGuildAndChannels();
         } catch (error) {
             console.error('[AppController] 初期化エラー:', error);
-            this.ui.showError('アプリケーションの初期化に失敗しました。');
+            if (error.type === 'NETWORK_ERROR') {
+                this.ui.showError('バックエンドサーバーに接続できません。サーバーが起動しているか確認してください。');
+            } else {
+                this.ui.showError(error.message || 'アプリケーションの初期化に失敗しました。');
+            }
         }
-    }
-
-    /**
-     * URL パラメータから Client ID を取得
-     * @returns {string|null} Client ID
-     */
-    getClientId() {
-        const params = new URLSearchParams(window.location.search);
-        return params.get('client_id');
     }
 
     /**
      * イベントリスナーを設定
      */
     setupEventListeners() {
-        // 認証ボタン
-        document.getElementById('auth-button')?.addEventListener('click', () => {
-            this.startAuth();
-        });
-
-        // ログアウトボタン
-        document.getElementById('logout-button')?.addEventListener('click', () => {
-            this.handleLogout();
-        });
-
-        // ギルド選択
-        document.getElementById('guild-list')?.addEventListener('click', (e) => {
-            const card = e.target.closest('.card');
-            if (card) {
-                const guildId = card.dataset.guildId;
-                this.handleGuildSelection(guildId);
-            }
-        });
-
         // チャネル選択
         document.getElementById('channel-list')?.addEventListener('click', (e) => {
             const card = e.target.closest('.card');
@@ -112,6 +83,11 @@ class AppController {
             this.handleRouletteExecution(count);
         });
 
+        // 結果を見る
+        document.getElementById('show-results')?.addEventListener('click', () => {
+            this.ui.showSavedResults();
+        });
+
         // 結果コピー
         document.getElementById('copy-result')?.addEventListener('click', () => {
             this.handleCopyResult();
@@ -122,13 +98,14 @@ class AppController {
             this.ui.showRouletteScreen(this.currentMembers);
         });
 
-        // 戻るボタン
-        document.getElementById('back-to-guilds')?.addEventListener('click', () => {
-            this.loadGuilds();
+        // TOPに戻る
+        document.getElementById('back-to-top')?.addEventListener('click', () => {
+            this.loadGuildAndChannels();
         });
 
+        // 戻るボタン
         document.getElementById('back-to-channels')?.addEventListener('click', () => {
-            this.handleGuildSelection(this.currentGuildId);
+            this.loadGuildAndChannels();
         });
 
         // エラーメッセージを閉じる
@@ -138,57 +115,23 @@ class AppController {
     }
 
     /**
-     * 認証フローを開始
+     * ギルド情報とチャネルリストを読み込み
      */
-    startAuth() {
-        try {
-            const clientId = this.getClientId();
-            if (!clientId) {
-                this.ui.showError(
-                    'Discord Client ID が指定されていません。\n' +
-                    'URL に ?client_id=YOUR_CLIENT_ID を追加してください。'
-                );
-                return;
-            }
-            this.auth.initiateAuth();
-        } catch (error) {
-            console.error('[AppController] 認証開始エラー:', error);
-            this.ui.showError('認証の開始に失敗しました。');
-        }
-    }
-
-    /**
-     * ギルドリストを読み込み
-     */
-    async loadGuilds() {
+    async loadGuildAndChannels() {
         try {
             this.ui.showLoading(true);
-            const guilds = await this.discordClient.getGuilds();
-            this.ui.showLoading(false);
-            this.ui.showGuildSelection(guilds);
-        } catch (error) {
-            this.ui.showLoading(false);
-            console.error('[AppController] ギルド取得エラー:', error);
-            this.handleApiError(error);
-        }
-    }
-
-    /**
-     * ギルド選択を処理
-     * @param {string} guildId - 選択されたギルド ID
-     */
-    async handleGuildSelection(guildId) {
-        try {
-            this.currentGuildId = guildId;
-            this.ui.showLoading(true);
             
-            const channels = await this.discordClient.getChannels(guildId);
+            // ギルド情報を取得
+            const guild = await this.discordClient.getGuild();
+            
+            // チャネルリストを取得
+            const channels = await this.discordClient.getChannels();
             
             this.ui.showLoading(false);
-            this.ui.showChannelSelection(channels);
+            this.ui.showChannelSelection(channels, guild.name);
         } catch (error) {
             this.ui.showLoading(false);
-            console.error('[AppController] チャネル取得エラー:', error);
+            console.error('[AppController] ギルド/チャネル取得エラー:', error);
             this.handleApiError(error);
         }
     }
@@ -202,10 +145,7 @@ class AppController {
             this.currentChannelId = channelId;
             this.ui.showLoading(true);
             
-            const members = await this.discordClient.getVoiceChannelMembers(
-                this.currentGuildId,
-                channelId
-            );
+            const members = await this.discordClient.getVoiceChannelMembers(channelId);
             
             this.ui.showLoading(false);
             
@@ -237,14 +177,17 @@ class AppController {
                 return;
             }
 
+            // 結果を見るボタンを非表示
+            const showResultsContainer = document.getElementById('show-results-container');
+            if (showResultsContainer) {
+                showResultsContainer.classList.add('hidden');
+            }
+
             // ルーレット実行
             const selected = this.rouletteEngine.selectMembers(this.currentMembers, count);
             
-            // アニメーション表示
+            // アニメーション表示（ルーレット画面に留まり、結果を見るボタンを表示）
             await this.ui.animateRoulette(this.currentMembers, selected);
-            
-            // 結果を表示
-            this.ui.showResults(selected);
             
             // 履歴に保存
             this.resultManager.saveToHistory({
@@ -285,38 +228,20 @@ class AppController {
     }
 
     /**
-     * ログアウトを処理
-     */
-    handleLogout() {
-        try {
-            this.auth.logout();
-            this.discordClient = null;
-            this.currentGuildId = null;
-            this.currentChannelId = null;
-            this.currentMembers = [];
-            this.ui.showAuthScreen();
-        } catch (error) {
-            console.error('[AppController] ログアウトエラー:', error);
-            this.ui.showError('ログアウトに失敗しました。');
-        }
-    }
-
-    /**
      * API エラーを処理
      * @param {Object} error - エラーオブジェクト
      */
     handleApiError(error) {
-        if (error.type === 'AUTH_ERROR') {
-            this.ui.showError('認証エラーが発生しました。再度ログインしてください。');
-            this.handleLogout();
-        } else if (error.type === 'RATE_LIMIT') {
-            this.ui.showError(error.message);
-        } else if (error.type === 'NETWORK_ERROR') {
-            this.ui.showError('ネットワークエラーが発生しました。接続を確認してください。');
-        } else if (error.type === 'PERMISSION_ERROR') {
-            this.ui.showError('このリソースにアクセスする権限がありません。');
+        if (error.type === 'NETWORK_ERROR') {
+            this.ui.showError('バックエンドサーバーに接続できません。サーバーが起動しているか確認してください。');
+        } else if (error.type === 'NOT_FOUND') {
+            this.ui.showError('リソースが見つかりません。');
+        } else if (error.type === 'SERVER_ERROR') {
+            this.ui.showError('サーバーエラーが発生しました。もう一度お試しください。');
+        } else if (error.status === 401) {
+            this.ui.showError('トークンが無効または期限切れです。Discord で /roulette コマンドを実行して新しい URL を取得してください。');
         } else {
-            this.ui.showError('エラーが発生しました。もう一度お試しください。');
+            this.ui.showError(error.message || 'エラーが発生しました。もう一度お試しください。');
         }
     }
 }

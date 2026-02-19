@@ -1,3 +1,5 @@
+import { RouletteWheel } from './roulette-wheel.js';
+
 /**
  * UI コントローラー
  * ユーザーインターフェースの状態管理と更新を担当
@@ -5,8 +7,6 @@
 export class UIController {
     constructor() {
         this.screens = {
-            auth: document.getElementById('auth-screen'),
-            guild: document.getElementById('guild-screen'),
             channel: document.getElementById('channel-screen'),
             roulette: document.getElementById('roulette-screen'),
             result: document.getElementById('result-screen')
@@ -16,15 +16,16 @@ export class UIController {
             loading: document.getElementById('loading'),
             errorMessage: document.getElementById('error-message'),
             errorText: document.getElementById('error-text'),
-            logoutButton: document.getElementById('logout-button'),
-            guildList: document.getElementById('guild-list'),
             channelList: document.getElementById('channel-list'),
             memberList: document.getElementById('member-list'),
             resultList: document.getElementById('result-list'),
-            selectCount: document.getElementById('select-count')
+            selectCount: document.getElementById('select-count'),
+            showResultsContainer: document.getElementById('show-results-container')
         };
 
         this.currentMembers = [];
+        this.currentSelectedMembers = [];
+        this.rouletteWheel = null;
     }
 
     /**
@@ -37,22 +38,12 @@ export class UIController {
     }
 
     /**
-     * 認証画面を表示
-     */
-    showAuthScreen() {
-        this.hideAllScreens();
-        this.screens.auth.classList.remove('hidden');
-        this.elements.logoutButton.classList.add('hidden');
-    }
-
-    /**
      * ギルド選択画面を表示
      * @param {Array} guilds - ギルドリスト
      */
     showGuildSelection(guilds) {
         this.hideAllScreens();
         this.screens.guild.classList.remove('hidden');
-        this.elements.logoutButton.classList.remove('hidden');
 
         // ギルドリストをクリア
         this.elements.guildList.innerHTML = '';
@@ -107,10 +98,17 @@ export class UIController {
     /**
      * チャネル選択画面を表示
      * @param {Array} channels - チャネルリスト
+     * @param {string} guildName - サーバー名（オプション）
      */
-    showChannelSelection(channels) {
+    showChannelSelection(channels, guildName = null) {
         this.hideAllScreens();
         this.screens.channel.classList.remove('hidden');
+
+        // サーバー名を表示
+        const heading = this.screens.channel.querySelector('h2');
+        if (heading && guildName) {
+            heading.textContent = `${guildName} - ボイスチャネルを選択`;
+        }
 
         // チャネルリストをクリア
         this.elements.channelList.innerHTML = '';
@@ -162,6 +160,22 @@ export class UIController {
         this.hideAllScreens();
         this.screens.roulette.classList.remove('hidden');
         this.currentMembers = members;
+
+        // 結果を見るボタンを非表示
+        if (this.elements.showResultsContainer) {
+            this.elements.showResultsContainer.classList.add('hidden');
+        }
+
+        // ルーレットホイールコンテナを削除（前回の残骸をクリーンアップ）
+        const wheelContainer = document.getElementById('roulette-wheel-container');
+        if (wheelContainer) {
+            wheelContainer.remove();
+        }
+
+        // メンバーリストとコントロールを表示状態に戻す
+        this.elements.memberList.style.display = '';
+        const controls = document.querySelector('.roulette-controls');
+        if (controls) controls.style.display = '';
 
         // メンバーリストをクリア
         this.elements.memberList.innerHTML = '';
@@ -276,26 +290,93 @@ export class UIController {
      * @returns {Promise<void>}
      */
     async animateRoulette(members, selected) {
-        const memberCards = this.elements.memberList.querySelectorAll('.member-card');
-        const selectedIds = new Set(selected.map(m => m.id));
-
-        // アニメーション: ランダムにハイライト
-        for (let i = 0; i < 20; i++) {
-            const randomIndex = Math.floor(Math.random() * memberCards.length);
-            memberCards.forEach(card => card.classList.remove('selected'));
-            memberCards[randomIndex].classList.add('selected');
-            await this.sleep(100);
+        // 選出されたメンバーを保存
+        this.currentSelectedMembers = selected;
+        
+        // ルーレット画面を表示
+        this.hideAllScreens();
+        this.screens.roulette.classList.remove('hidden');
+        
+        // メンバーリストとコントロールを非表示
+        this.elements.memberList.style.display = 'none';
+        const controls = document.querySelector('.roulette-controls');
+        if (controls) controls.style.display = 'none';
+        
+        // 結果を見るボタンを非表示（アニメーション中）
+        if (this.elements.showResultsContainer) {
+            this.elements.showResultsContainer.classList.add('hidden');
         }
-
-        // 最終結果を表示
-        memberCards.forEach(card => {
-            card.classList.remove('selected');
-            if (selectedIds.has(card.dataset.memberId)) {
-                card.classList.add('selected');
+        
+        // 既存のルーレットホイールコンテナを削除
+        let wheelContainer = document.getElementById('roulette-wheel-container');
+        if (wheelContainer) {
+            wheelContainer.remove();
+        }
+        
+        // ルーレットホイール用のコンテナを作成
+        wheelContainer = document.createElement('div');
+        wheelContainer.id = 'roulette-wheel-container';
+        wheelContainer.style.display = 'flex';
+        wheelContainer.style.justifyContent = 'center';
+        wheelContainer.style.alignItems = 'center';
+        wheelContainer.style.padding = '20px';
+        wheelContainer.style.flexDirection = 'column';
+        this.screens.roulette.querySelector('.container').insertBefore(
+            wheelContainer,
+            this.elements.memberList
+        );
+        
+        // ルーレットホイールを初期化
+        this.rouletteWheel = new RouletteWheel(wheelContainer);
+        this.rouletteWheel.initialize(members);
+        
+        // 各選出メンバーに対してルーレットを回す
+        for (let i = 0; i < selected.length; i++) {
+            const isLastSpin = i === selected.length - 1;
+            
+            if (isLastSpin) {
+                // 最後のスピンの場合、アニメーション完了を待たずにボタンを表示
+                const spinPromise = this.rouletteWheel.spin(selected[i]);
+                
+                // アニメーションの80%完了時点でボタンを表示
+                setTimeout(() => {
+                    if (this.elements.showResultsContainer) {
+                        this.elements.showResultsContainer.classList.remove('hidden');
+                        
+                        // ボタンが見える位置までスクロール
+                        setTimeout(() => {
+                            this.elements.showResultsContainer.scrollIntoView({ 
+                                behavior: 'smooth', 
+                                block: 'center' 
+                            });
+                        }, 100);
+                    }
+                }, 1600);
+                
+                await spinPromise;
+            } else {
+                await this.rouletteWheel.spin(selected[i]);
+                await this.sleep(500);
             }
-        });
+        }
+    }
 
-        await this.sleep(1000);
+    /**
+     * 保存された結果を表示
+     */
+    showSavedResults() {
+        // ルーレットホイールをクリーンアップ
+        if (this.rouletteWheel) {
+            this.rouletteWheel.destroy();
+            this.rouletteWheel = null;
+        }
+        const wheelContainer = document.getElementById('roulette-wheel-container');
+        if (wheelContainer) {
+            wheelContainer.remove();
+        }
+        
+        // 結果画面を表示
+        this.showResults(this.currentSelectedMembers);
     }
 
     /**
