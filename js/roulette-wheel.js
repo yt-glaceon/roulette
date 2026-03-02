@@ -153,6 +153,8 @@ export class RouletteWheel {
         const startTime = Date.now();
         const startRotation = this.rotation;
         
+        console.log(`[RouletteWheel] アニメーション開始: duration=${duration}ms, 選出メンバー=${selectedMember.displayName}`);
+        
         return new Promise((resolve) => {
             const animate = () => {
                 const elapsed = Date.now() - startTime;
@@ -173,6 +175,8 @@ export class RouletteWheel {
                     this.rotation = this.targetRotation;
                     this.draw();
                     this.isSpinning = false;
+                    const totalTime = Date.now() - startTime;
+                    console.log(`[RouletteWheel] アニメーション完了: 実際の時間=${totalTime}ms`);
                     resolve();
                 }
             };

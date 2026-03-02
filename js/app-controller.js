@@ -223,13 +223,13 @@ class AppController {
                 // ロールを割り当て
                 const selectedWithRoles = this.rouletteEngine.assignRoles(selected, roles);
 
-                // アニメーション表示（除外後のメンバーリストでルーレットを初期化）
-                // アニメーションには選出されたメンバー（ロールなし）を渡す
-                await this.ui.animateRoulette(availableMembers, selected);
-
-                // 結果を保存（ロール情報を含む）
-                // 結果画面にはロール付きメンバーを保存
+                // 結果を先に保存（ロール情報を含む）
                 this.ui.currentSelectedMembers = selectedWithRoles;
+
+                // アニメーション表示（選出されたメンバーを使用）
+                // selectedWithRoles から member だけを抽出してアニメーションに渡す
+                const selectedMembers = selectedWithRoles.map(item => item.member);
+                await this.ui.animateRoulette(availableMembers, selectedMembers);
 
                 // 履歴に保存
                 this.resultManager.saveToHistory({
@@ -238,6 +238,7 @@ class AppController {
                     totalMembers: this.currentMembers.length,
                     selectedCount: count,
                     selectedMembers: selectedWithRoles
+                });
                 });
             } catch (error) {
                 console.error('[AppController] ルーレット実行エラー:', error);
