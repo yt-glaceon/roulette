@@ -224,9 +224,11 @@ class AppController {
                 const selectedWithRoles = this.rouletteEngine.assignRoles(selected, roles);
 
                 // アニメーション表示（除外後のメンバーリストでルーレットを初期化）
+                // アニメーションには選出されたメンバー（ロールなし）を渡す
                 await this.ui.animateRoulette(availableMembers, selected);
 
                 // 結果を保存（ロール情報を含む）
+                // 結果画面にはロール付きメンバーを保存
                 this.ui.currentSelectedMembers = selectedWithRoles;
 
                 // 履歴に保存

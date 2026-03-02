@@ -548,9 +548,6 @@ export class UIController {
      * @returns {Promise<void>}
      */
     async animateRoulette(members, selected) {
-        // 選出されたメンバーを保存
-        this.currentSelectedMembers = selected;
-        
         // ルーレット画面を表示
         this.hideAllScreens();
         this.screens.roulette.classList.remove('hidden');

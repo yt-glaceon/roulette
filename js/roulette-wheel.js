@@ -151,6 +151,7 @@ export class RouletteWheel {
         
         // アニメーション開始
         const startTime = Date.now();
+        const startRotation = this.rotation;
         
         return new Promise((resolve) => {
             const animate = () => {
@@ -160,13 +161,17 @@ export class RouletteWheel {
                 // イージング関数（減速）
                 const easeOut = 1 - Math.pow(1 - progress, 3);
                 
-                this.rotation = this.rotation + (this.targetRotation - this.rotation) * easeOut * 0.1;
+                // 開始角度から目標角度まで補間
+                this.rotation = startRotation + (this.targetRotation - startRotation) * easeOut;
                 
                 this.draw();
                 
                 if (progress < 1) {
                     this.animationId = requestAnimationFrame(animate);
                 } else {
+                    // アニメーション完了時に目標角度に正確に設定
+                    this.rotation = this.targetRotation;
+                    this.draw();
                     this.isSpinning = false;
                     resolve();
                 }
