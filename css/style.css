@@ -231,6 +231,29 @@ p {
     word-break: break-word;
 }
 
+/* 除外チェックボックス */
+.member-exclude {
+    margin-top: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.exclude-checkbox {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: var(--error);
+}
+
+.member-exclude label {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    user-select: none;
+}
+
 /* ルーレットコントロール */
 .roulette-controls {
     display: flex;
@@ -253,6 +276,52 @@ p {
     font-size: 1rem;
     width: 80px;
 }
+
+/* ロール入力フィールド */
+.role-input-container {
+    margin-top: 2rem;
+    padding: var(--spacing);
+    background: var(--surface);
+    border-radius: var(--border-radius);
+}
+
+.role-input-label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+}
+
+.role-input-fields {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: var(--spacing);
+}
+
+.role-input-wrapper {
+    display: flex;
+    flex-direction: column;
+}
+
+.role-input {
+    padding: 10px 12px;
+    border: 2px solid var(--secondary-color);
+    border-radius: var(--border-radius);
+    background: var(--background);
+    color: var(--text-primary);
+    font-size: 1rem;
+    transition: border-color 0.2s;
+}
+
+.role-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+.role-input::placeholder {
+    color: var(--text-secondary);
+}
+
 
 /* 結果グリッド */
 .result-grid {
@@ -282,6 +351,16 @@ p {
     align-items: center;
     justify-content: center;
     font-weight: bold;
+}
+
+.member-role {
+    margin-top: 0.5rem;
+    padding: 6px 12px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
 }
 
 .result-actions {
@@ -372,5 +451,54 @@ p {
 
     .roulette-controls {
         flex-direction: column;
+    }
+
+    .role-input-fields {
+        grid-template-columns: 1fr;
+    }
+
+    .result-actions {
+        flex-direction: column;
+    }
+
+    .result-actions .btn {
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .container {
+        padding: 12px;
+    }
+
+    .member-grid {
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        gap: 12px;
+    }
+
+    .member-avatar {
+        width: 60px;
+        height: 60px;
+        font-size: 1.5rem;
+    }
+
+    .member-name {
+        font-size: 0.8rem;
+    }
+
+    .member-exclude {
+        margin-top: 0.5rem;
+    }
+
+    .member-exclude label {
+        font-size: 0.75rem;
+    }
+
+    .role-input-container {
+        padding: 12px;
+    }
+
+    .role-input-label {
+        font-size: 1rem;
     }
 }

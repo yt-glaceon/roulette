@@ -124,10 +124,17 @@ export class RouletteWheel {
     /**
      * ルーレットを回転
      * @param {Object} selectedMember - 選出されたメンバー
+     * @param {Object} options - オプション設定
+     * @param {number} options.duration - 回転時間（ミリ秒）デフォルト: 6000
+     * @param {number} options.minRotations - 最低回転数 デフォルト: 5
      * @returns {Promise<void>}
      */
-    async spin(selectedMember) {
+    async spin(selectedMember, options = {}) {
         if (this.isSpinning) return;
+        
+        // デフォルト値を設定
+        const duration = options.duration || 6000;
+        const minRotations = options.minRotations || 5;
         
         this.isSpinning = true;
         
@@ -135,15 +142,15 @@ export class RouletteWheel {
         const selectedIndex = this.members.findIndex(m => m.id === selectedMember.id);
         const anglePerMember = (Math.PI * 2) / this.members.length;
         
-        // 目標角度を計算（選出されたメンバーが上部の針に来るように）
-        // 複数回転させる（3〜5回転）
-        const extraRotations = 3 + Math.random() * 2;
-        const targetAngle = -(anglePerMember * selectedIndex) - (anglePerMember / 2);
+        // 目標角度を計算（白線回避ロジックを使用）
+        const targetAngle = this.calculateTargetAngle(selectedIndex, anglePerMember);
+        
+        // 最低回転数を保証（minRotations 以上）
+        const extraRotations = minRotations + Math.random() * 2;
         this.targetRotation = this.rotation + (Math.PI * 2 * extraRotations) + targetAngle;
         
         // アニメーション開始
         const startTime = Date.now();
-        const duration = 4000; // 4秒
         
         return new Promise((resolve) => {
             const animate = () => {
@@ -167,6 +174,38 @@ export class RouletteWheel {
             
             animate();
         });
+    }
+    /**
+     * 停止角度を計算（白線回避）
+     * @param {number} selectedIndex - 選出されたメンバーのインデックス
+     * @param {number} anglePerMember - メンバーごとの角度
+     * @returns {number} 調整された停止角度
+     */
+    calculateTargetAngle(selectedIndex, anglePerMember) {
+        // セクションの中央を基準とする
+        const sectionCenter = anglePerMember / 2;
+        
+        // 基本の目標角度（選出されたメンバーのセクション中央が針に来るように）
+        let targetAngle = -(anglePerMember * selectedIndex) - sectionCenter;
+        
+        // 白線からの距離を確認（5度 = 5 * Math.PI / 180 ラジアン）
+        const whiteLineThreshold = 5 * Math.PI / 180;
+        
+        // セクション中央からのずれを計算（-sectionCenter から +sectionCenter の範囲）
+        // 0がセクション中央、±sectionCenterが白線
+        const offsetFromCenter = 0; // デフォルトは中央
+        
+        // 白線からの最小距離を確保
+        // セクション中央を基準に、白線から whiteLineThreshold 以上離れた位置に調整
+        const maxOffset = sectionCenter - whiteLineThreshold;
+        
+        // ランダムなオフセットを追加（中央付近に収まるように）
+        const randomOffset = (Math.random() - 0.5) * maxOffset * 0.5;
+        
+        // 最終的な目標角度
+        targetAngle += randomOffset;
+        
+        return targetAngle;
     }
 
     /**

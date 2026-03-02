@@ -112,6 +112,21 @@ class AppController {
         document.getElementById('error-close')?.addEventListener('click', () => {
             this.ui.hideError();
         });
+
+        // 選出人数変更時のロール入力フィールド更新リスナー（要件: 3.2）
+        document.addEventListener('input', (e) => {
+            if (e.target.id === 'select-count') {
+                const newCount = parseInt(e.target.value);
+                this.ui.updateRoleInputFields(newCount);
+            }
+        });
+
+        // 除外チェックボックス変更時の選出可能人数更新リスナー（要件: 2.5）
+        document.addEventListener('change', (e) => {
+            if (e.target.classList.contains('exclude-checkbox')) {
+                this.ui.updateAvailableMemberCount();
+            }
+        });
     }
 
     /**
@@ -167,65 +182,100 @@ class AppController {
      * ルーレット実行を処理
      * @param {number} count - 選出人数
      */
-    async handleRouletteExecution(count) {
-        try {
-            // バリデーション
-            if (!this.rouletteEngine.validateCount(count, this.currentMembers.length)) {
-                this.ui.showError(
-                    `選出人数は 1 以上 ${this.currentMembers.length} 以下で指定してください。`
+    /**
+         * ルーレット実行を処理
+         * @param {number} count - 選出人数
+         */
+        async handleRouletteExecution(count) {
+            try {
+                // 除外リストを取得
+                const excludedIds = this.ui.getExcludedMemberIds();
+
+                // ロールリストを取得
+                const roles = this.ui.getRoles();
+
+                // 除外後のメンバーリストを作成
+                const availableMembers = this.currentMembers.filter(
+                    member => !excludedIds.includes(member.id)
                 );
-                return;
-            }
 
-            // 結果を見るボタンを非表示
-            const showResultsContainer = document.getElementById('show-results-container');
-            if (showResultsContainer) {
-                showResultsContainer.classList.add('hidden');
-            }
+                // バリデーション
+                if (!this.rouletteEngine.validateCount(count, availableMembers.length)) {
+                    this.ui.showError(
+                        `選出人数は 1 以上 ${availableMembers.length} 以下で指定してください。`
+                    );
+                    return;
+                }
 
-            // ルーレット実行
-            const selected = this.rouletteEngine.selectMembers(this.currentMembers, count);
-            
-            // アニメーション表示（ルーレット画面に留まり、結果を見るボタンを表示）
-            await this.ui.animateRoulette(this.currentMembers, selected);
-            
-            // 履歴に保存
-            this.resultManager.saveToHistory({
-                guildId: this.currentGuildId,
-                channelId: this.currentChannelId,
-                totalMembers: this.currentMembers.length,
-                selectedCount: count,
-                selectedMembers: selected
-            });
-        } catch (error) {
-            console.error('[AppController] ルーレット実行エラー:', error);
-            this.ui.showError('ルーレットの実行に失敗しました。');
+                // 結果を見るボタンを非表示
+                const showResultsContainer = document.getElementById('show-results-container');
+                if (showResultsContainer) {
+                    showResultsContainer.classList.add('hidden');
+                }
+
+                // メンバー選出（除外リストを考慮）
+                const selected = this.rouletteEngine.selectMembersWithExclusion(
+                    this.currentMembers, 
+                    count, 
+                    excludedIds
+                );
+
+                // ロールを割り当て
+                const selectedWithRoles = this.rouletteEngine.assignRoles(selected, roles);
+
+                // アニメーション表示（除外後のメンバーリストでルーレットを初期化）
+                await this.ui.animateRoulette(availableMembers, selected);
+
+                // 結果を保存（ロール情報を含む）
+                this.ui.currentSelectedMembers = selectedWithRoles;
+
+                // 履歴に保存
+                this.resultManager.saveToHistory({
+                    guildId: this.currentGuildId,
+                    channelId: this.currentChannelId,
+                    totalMembers: this.currentMembers.length,
+                    selectedCount: count,
+                    selectedMembers: selectedWithRoles
+                });
+            } catch (error) {
+                console.error('[AppController] ルーレット実行エラー:', error);
+
+                // エラータイプに応じたメッセージを表示
+                if (error.type === 'NO_AVAILABLE_MEMBERS') {
+                    this.ui.showError(error.message);
+                } else if (error.type === 'INSUFFICIENT_MEMBERS') {
+                    this.ui.showError(error.message);
+                } else {
+                    this.ui.showError('ルーレットの実行に失敗しました。');
+                }
+            }
         }
-    }
 
     /**
      * 結果のコピーを処理
      */
-    async handleCopyResult() {
-        try {
-            const resultCards = document.querySelectorAll('.result-card');
-            const selectedMembers = Array.from(resultCards).map(card => {
-                const name = card.querySelector('.member-name').textContent;
-                return { displayName: name };
-            });
+    /**
+         * 結果のコピーを処理
+         */
+        async handleCopyResult() {
+            try {
+                const selectedMembers = this.ui.currentSelectedMembers;
 
-            const success = await this.resultManager.copyToClipboard(selectedMembers);
-            
-            if (success) {
-                this.ui.showSuccess('結果をクリップボードにコピーしました！');
-            } else {
+                // ロールが含まれているかチェック
+                const hasRoles = selectedMembers.some(item => item.role);
+
+                const success = await this.resultManager.copyToClipboard(selectedMembers, hasRoles);
+
+                if (success) {
+                    this.ui.showSuccess('結果をクリップボードにコピーしました！');
+                } else {
+                    this.ui.showError('クリップボードへのコピーに失敗しました。');
+                }
+            } catch (error) {
+                console.error('[AppController] コピーエラー:', error);
                 this.ui.showError('クリップボードへのコピーに失敗しました。');
             }
-        } catch (error) {
-            console.error('[AppController] コピーエラー:', error);
-            this.ui.showError('クリップボードへのコピーに失敗しました。');
         }
-    }
 
     /**
      * API エラーを処理

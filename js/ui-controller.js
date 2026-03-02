@@ -157,44 +157,72 @@ export class UIController {
      * @param {Array} members - メンバーリスト
      */
     showRouletteScreen(members) {
-        this.hideAllScreens();
-        this.screens.roulette.classList.remove('hidden');
-        this.currentMembers = members;
+            this.hideAllScreens();
+            this.screens.roulette.classList.remove('hidden');
+            this.currentMembers = members;
 
-        // 結果を見るボタンを非表示
-        if (this.elements.showResultsContainer) {
-            this.elements.showResultsContainer.classList.add('hidden');
+            // 結果を見るボタンを非表示
+            if (this.elements.showResultsContainer) {
+                this.elements.showResultsContainer.classList.add('hidden');
+            }
+
+            // ルーレットホイールコンテナを削除（前回の残骸をクリーンアップ）
+            const wheelContainer = document.getElementById('roulette-wheel-container');
+            if (wheelContainer) {
+                wheelContainer.remove();
+            }
+
+            // メンバーリストとコントロールを表示状態に戻す
+            this.elements.memberList.style.display = '';
+            const controls = document.querySelector('.roulette-controls');
+            if (controls) controls.style.display = '';
+
+            // メンバーリストをクリア
+            this.elements.memberList.innerHTML = '';
+
+            if (members.length === 0) {
+                this.elements.memberList.innerHTML = '<p>メンバーがいません</p>';
+                return;
+            }
+
+            // 選出人数の最大値を設定
+            this.elements.selectCount.max = members.length;
+            this.elements.selectCount.value = Math.min(1, members.length);
+
+            // メンバーカードを作成(除外チェックボックス付き)
+            members.forEach(member => {
+                const card = this.createMemberCardWithExclusion(member);
+                this.elements.memberList.appendChild(card);
+            });
+
+            // 除外チェックボックスのイベントリスナーを設定
+            // 注: AppController.setupEventListeners でもイベント委譲で設定されているが、
+            // UIController 単体でのテスト可能性を保つため、ここでも設定
+            this.setupExclusionListeners();
+
+            // ロール入力フィールドを追加
+            const existingRoleContainer = document.getElementById('role-input-container');
+            if (existingRoleContainer) {
+                existingRoleContainer.remove();
+            }
+
+            const selectCount = parseInt(this.elements.selectCount.value);
+            const roleInputFields = this.createRoleInputFields(selectCount);
+            
+            // ルーレットコントロールの後に挿入
+            const rouletteControls = document.querySelector('.roulette-controls');
+            if (rouletteControls) {
+                rouletteControls.insertAdjacentElement('afterend', roleInputFields);
+            }
+
+            // 選出人数変更時のイベントリスナーを追加
+            // 注: AppController.setupEventListeners でもイベント委譲で設定されているが、
+            // UIController 単体でのテスト可能性を保つため、ここでも設定
+            this.elements.selectCount.addEventListener('input', (e) => {
+                const newCount = parseInt(e.target.value);
+                this.updateRoleInputFields(newCount);
+            });
         }
-
-        // ルーレットホイールコンテナを削除（前回の残骸をクリーンアップ）
-        const wheelContainer = document.getElementById('roulette-wheel-container');
-        if (wheelContainer) {
-            wheelContainer.remove();
-        }
-
-        // メンバーリストとコントロールを表示状態に戻す
-        this.elements.memberList.style.display = '';
-        const controls = document.querySelector('.roulette-controls');
-        if (controls) controls.style.display = '';
-
-        // メンバーリストをクリア
-        this.elements.memberList.innerHTML = '';
-
-        if (members.length === 0) {
-            this.elements.memberList.innerHTML = '<p>メンバーがいません</p>';
-            return;
-        }
-
-        // 選出人数の最大値を設定
-        this.elements.selectCount.max = members.length;
-        this.elements.selectCount.value = Math.min(1, members.length);
-
-        // メンバーカードを作成
-        members.forEach(member => {
-            const card = this.createMemberCard(member);
-            this.elements.memberList.appendChild(card);
-        });
-    }
 
     /**
      * メンバーカードを作成
@@ -227,42 +255,19 @@ export class UIController {
 
         return card;
     }
-
     /**
-     * ルーレット結果を表示
-     * @param {Array} selectedMembers - 選出されたメンバー
-     */
-    showResults(selectedMembers) {
-        this.hideAllScreens();
-        this.screens.result.classList.remove('hidden');
-
-        // 結果リストをクリア
-        this.elements.resultList.innerHTML = '';
-
-        // 結果カードを作成
-        selectedMembers.forEach((member, index) => {
-            const card = this.createResultCard(member, index + 1);
-            this.elements.resultList.appendChild(card);
-        });
-    }
-
-    /**
-     * 結果カードを作成
+     * 除外チェックボックス付きメンバーカードを作成
      * @param {Object} member - メンバー情報
-     * @param {number} order - 選出順序
-     * @returns {HTMLElement} 結果カード
+     * @returns {HTMLElement} メンバーカード
      */
-    createResultCard(member, order) {
+    createMemberCardWithExclusion(member) {
         const card = document.createElement('div');
-        card.className = 'result-card';
-
-        const orderBadge = document.createElement('div');
-        orderBadge.className = 'result-order';
-        orderBadge.textContent = order;
+        card.className = 'member-card';
+        card.dataset.memberId = member.id;
 
         const avatar = document.createElement('div');
         avatar.className = 'member-avatar';
-        
+
         if (member.avatar) {
             const img = document.createElement('img');
             img.src = member.avatar;
@@ -276,12 +281,265 @@ export class UIController {
         name.className = 'member-name';
         name.textContent = member.displayName;
 
-        card.appendChild(orderBadge);
+        // 除外チェックボックスを追加
+        const excludeContainer = document.createElement('div');
+        excludeContainer.className = 'member-exclude';
+
+        const excludeCheckbox = document.createElement('input');
+        excludeCheckbox.type = 'checkbox';
+        excludeCheckbox.id = `exclude-${member.id}`;
+        excludeCheckbox.className = 'exclude-checkbox';
+        excludeCheckbox.dataset.memberId = member.id;
+
+        const excludeLabel = document.createElement('label');
+        excludeLabel.htmlFor = `exclude-${member.id}`;
+        excludeLabel.textContent = '除外';
+
+        excludeContainer.appendChild(excludeCheckbox);
+        excludeContainer.appendChild(excludeLabel);
+
         card.appendChild(avatar);
         card.appendChild(name);
+        card.appendChild(excludeContainer);
 
         return card;
     }
+    /**
+     * 除外されたメンバーIDのリストを取得
+     * @returns {Array<string>} 除外メンバーIDの配列
+     */
+    getExcludedMemberIds() {
+        const excludedIds = [];
+        const checkboxes = document.querySelectorAll('.exclude-checkbox:checked');
+        checkboxes.forEach(checkbox => {
+            excludedIds.push(checkbox.dataset.memberId);
+        });
+        return excludedIds;
+    }
+    /**
+     * 除外チェックボックスのイベントリスナーを設定
+     */
+    setupExclusionListeners() {
+        const checkboxes = document.querySelectorAll('.exclude-checkbox');
+        checkboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', () => {
+                this.updateAvailableMemberCount();
+            });
+        });
+    }
+
+    /**
+     * 選出可能なメンバー数を更新
+     */
+    updateAvailableMemberCount() {
+        const excludedIds = this.getExcludedMemberIds();
+        const availableCount = this.currentMembers.length - excludedIds.length;
+
+        // 選出人数の上限を更新
+        this.elements.selectCount.max = availableCount;
+
+        // 現在の選出人数が上限を超えている場合は調整
+        const currentValue = parseInt(this.elements.selectCount.value);
+        const startButton = document.getElementById('start-roulette');
+        
+        if (currentValue > availableCount && availableCount > 0) {
+            this.elements.selectCount.value = availableCount;
+            this.showError(`選出人数が多すぎます。選出可能なメンバーは${availableCount}人です。`);
+            // エラーメッセージを3秒後に自動的に非表示
+            setTimeout(() => this.hideError(), 3000);
+        }
+
+        // すべてのメンバーが除外された場合のエラー表示
+        if (availableCount === 0) {
+            this.showError('選出できるメンバーがいません。除外を解除してください。');
+            if (startButton) {
+                startButton.disabled = true;
+            }
+            this.elements.selectCount.value = 0;
+        } else {
+            // 選出人数が上限を超えていない場合のみエラーを非表示
+            if (currentValue <= availableCount) {
+                this.hideError();
+            }
+            if (startButton) {
+                startButton.disabled = false;
+            }
+            // 選出人数が0の場合は1に設定
+            if (parseInt(this.elements.selectCount.value) === 0) {
+                this.elements.selectCount.value = 1;
+            }
+        }
+    }
+
+    /**
+     * ロール入力フィールドを作成
+     * @param {number} count - 選出人数
+     * @returns {HTMLElement} ロール入力コンテナ
+     */
+    createRoleInputFields(count) {
+        const container = document.createElement('div');
+        container.id = 'role-input-container';
+        container.className = 'role-input-container';
+
+        const label = document.createElement('label');
+        label.textContent = 'ロール（任意）:';
+        label.className = 'role-input-label';
+        container.appendChild(label);
+
+        const fieldsWrapper = document.createElement('div');
+        fieldsWrapper.id = 'role-input-fields';
+        fieldsWrapper.className = 'role-input-fields';
+
+        for (let i = 0; i < count; i++) {
+            const inputWrapper = document.createElement('div');
+            inputWrapper.className = 'role-input-wrapper';
+
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'role-input';
+            input.placeholder = `ロール ${i + 1}`;
+            input.dataset.index = i;
+
+            inputWrapper.appendChild(input);
+            fieldsWrapper.appendChild(inputWrapper);
+        }
+
+        container.appendChild(fieldsWrapper);
+        return container;
+    }
+
+    /**
+     * 入力されたロールのリストを取得
+     * @returns {Array<string>} ロールの配列（空文字列は除外）
+     */
+    getRoles() {
+        const roles = [];
+        const inputs = document.querySelectorAll('.role-input');
+        inputs.forEach(input => {
+            const value = input.value.trim();
+            if (value !== '') {
+                roles.push(value);
+            }
+        });
+        return roles;
+    }
+    /**
+     * ロール入力フィールドを更新
+     * @param {number} count - 新しい選出人数
+     */
+    updateRoleInputFields(count) {
+        const fieldsWrapper = document.getElementById('role-input-fields');
+        if (!fieldsWrapper) {
+            return;
+        }
+
+        const currentInputs = fieldsWrapper.querySelectorAll('.role-input-wrapper');
+        const currentCount = currentInputs.length;
+
+        if (count > currentCount) {
+            // フィールドを追加
+            for (let i = currentCount; i < count; i++) {
+                const inputWrapper = document.createElement('div');
+                inputWrapper.className = 'role-input-wrapper';
+
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.className = 'role-input';
+                input.placeholder = `ロール ${i + 1}`;
+                input.dataset.index = i;
+
+                inputWrapper.appendChild(input);
+                fieldsWrapper.appendChild(inputWrapper);
+            }
+        } else if (count < currentCount) {
+            // フィールドを削除し、非表示になったフィールドの内容をリセット
+            for (let i = currentCount - 1; i >= count; i--) {
+                const wrapper = currentInputs[i];
+                const input = wrapper.querySelector('.role-input');
+                if (input) {
+                    input.value = ''; // 内容をリセット
+                }
+                wrapper.remove();
+            }
+        }
+    }
+
+
+
+
+
+    /**
+     * ルーレット結果を表示
+     * @param {Array} selectedMembers - 選出されたメンバー
+     */
+    showResults(selectedMembers) {
+            this.hideAllScreens();
+            this.screens.result.classList.remove('hidden');
+
+            // 結果リストをクリア
+            this.elements.resultList.innerHTML = '';
+
+            // 結果カードを作成
+            selectedMembers.forEach((item, index) => {
+                // item が {member, role} の形式か、単純な member オブジェクトかを判定
+                const member = item.member || item;
+                const role = item.role || null;
+                const card = this.createResultCard(member, index + 1, role);
+                this.elements.resultList.appendChild(card);
+            });
+        }
+
+    /**
+     * 結果カードを作成
+     * @param {Object} member - メンバー情報
+     * @param {number} order - 選出順序
+     * @returns {HTMLElement} 結果カード
+     */
+    /**
+         * 結果カードを作成
+         * @param {Object} member - メンバー情報
+         * @param {number} order - 選出順序
+         * @param {string|null} role - 割り当てられたロール
+         * @returns {HTMLElement} 結果カード
+         */
+        createResultCard(member, order, role = null) {
+            const card = document.createElement('div');
+            card.className = 'result-card';
+
+            const orderBadge = document.createElement('div');
+            orderBadge.className = 'result-order';
+            orderBadge.textContent = order;
+
+            const avatar = document.createElement('div');
+            avatar.className = 'member-avatar';
+
+            if (member.avatar) {
+                const img = document.createElement('img');
+                img.src = member.avatar;
+                img.alt = member.displayName;
+                avatar.appendChild(img);
+            } else {
+                avatar.textContent = member.displayName.charAt(0).toUpperCase();
+            }
+
+            const name = document.createElement('div');
+            name.className = 'member-name';
+            name.textContent = member.displayName;
+
+            card.appendChild(orderBadge);
+            card.appendChild(avatar);
+            card.appendChild(name);
+
+            // ロールが指定されている場合は表示
+            if (role) {
+                const roleElement = document.createElement('div');
+                roleElement.className = 'member-role';
+                roleElement.textContent = role;
+                card.appendChild(roleElement);
+            }
+
+            return card;
+        }
 
     /**
      * ルーレットアニメーションを実行

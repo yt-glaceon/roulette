@@ -9,15 +9,24 @@ export class ResultManager {
     }
 
     /**
-     * 結果をクリップボードにコピー
+     * 結果をクリップボードにコピー（ロール対応）
      * @param {Array} selectedMembers - 選出されたメンバー
+     * @param {boolean} withRoles - ロールを含めるかどうか
      * @returns {Promise<boolean>} 成功したかどうか
      */
-    async copyToClipboard(selectedMembers) {
+    async copyToClipboard(selectedMembers, withRoles = false) {
         try {
             // メンバー名をテキスト形式に変換
             const text = selectedMembers
-                .map((member, index) => `${index + 1}. ${member.displayName}`)
+                .map((item, index) => {
+                    // ロール付きフォーマットの場合
+                    if (withRoles && item.role) {
+                        return `${index + 1}. ${item.member.displayName} - ${item.role}`;
+                    }
+                    // ロールなしまたは既存フォーマットの場合
+                    const member = item.member || item;
+                    return `${index + 1}. ${member.displayName}`;
+                })
                 .join('\n');
 
             // Clipboard API を使用

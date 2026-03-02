@@ -32,6 +32,70 @@ export class RouletteEngine {
         // 指定人数を選出
         return shuffled.slice(0, count);
     }
+    /**
+     * 除外リストを考慮してメンバーを選出
+     * @param {Array} members - 全メンバーリスト
+     * @param {number} count - 選出人数
+     * @param {Array<string>} excludedIds - 除外するメンバーIDの配列
+     * @returns {Array} 選出されたメンバー
+     * @throws {Error} 選出可能なメンバーが不足している場合
+     */
+    selectMembersWithExclusion(members, count, excludedIds = []) {
+        // 除外リストが空の場合は既存のメソッドを使用
+        if (!excludedIds || excludedIds.length === 0) {
+            return this.selectMembers(members, count);
+        }
+
+        // 除外IDに一致しないメンバーをフィルタリング
+        const availableMembers = members.filter(member => !excludedIds.includes(member.id));
+
+        // 選出可能なメンバー数のバリデーション
+        if (availableMembers.length === 0) {
+            throw {
+                type: 'NO_AVAILABLE_MEMBERS',
+                message: '選出可能なメンバーがいません。除外設定を確認してください。'
+            };
+        }
+
+        if (count > availableMembers.length) {
+            throw {
+                type: 'INSUFFICIENT_MEMBERS',
+                message: `選出人数が選出可能なメンバー数を超えています。選出可能: ${availableMembers.length}人`
+            };
+        }
+
+        // 選出可能なメンバーから選出
+        return this.selectMembers(availableMembers, count);
+    }
+
+    /**
+     * 選出されたメンバーにロールをランダム割り当て
+     * @param {Array} selectedMembers - 選出されたメンバー
+     * @param {Array<string>} roles - ロールのリスト
+     * @returns {Array} ロール付きメンバー情報 [{member, role}, ...]
+     */
+    assignRoles(selectedMembers, roles = []) {
+        // 空文字列を除外したロールリストを作成
+        const validRoles = roles.filter(role => role && role.trim() !== '');
+
+        // ロールが空の場合は、すべてのメンバーに null を割り当て
+        if (validRoles.length === 0) {
+            return selectedMembers.map(member => ({
+                member,
+                role: null
+            }));
+        }
+
+        // ロールリストをシャッフル
+        const shuffledRoles = this.shuffle([...validRoles]);
+
+        // 各メンバーにロールを割り当て
+        return selectedMembers.map((member, index) => ({
+            member,
+            role: index < shuffledRoles.length ? shuffledRoles[index] : null
+        }));
+    }
+
 
     /**
      * 選出人数のバリデーション
