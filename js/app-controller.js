@@ -239,7 +239,6 @@ class AppController {
                     selectedCount: count,
                     selectedMembers: selectedWithRoles
                 });
-                });
             } catch (error) {
                 console.error('[AppController] ルーレット実行エラー:', error);
 
