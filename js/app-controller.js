@@ -227,9 +227,8 @@ class AppController {
                 this.ui.currentSelectedMembers = selectedWithRoles;
 
                 // アニメーション表示（選出されたメンバーを使用）
-                // selectedWithRoles から member だけを抽出してアニメーションに渡す
-                const selectedMembers = selectedWithRoles.map(item => item.member);
-                await this.ui.animateRoulette(availableMembers, selectedMembers);
+                // selected（ロール割り当て前の純粋なメンバー配列）をアニメーションに渡す
+                await this.ui.animateRoulette(availableMembers, selected);
 
                 // 履歴に保存
                 this.resultManager.saveToHistory({
