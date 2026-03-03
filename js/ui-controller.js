@@ -543,12 +543,13 @@ export class UIController {
 
     /**
      * ルーレットアニメーションを実行
-     * @param {Array} members - 全メンバー
+     * @param {Array} members - 全メンバー（除外後）
      * @param {Array} selected - 選出されたメンバー
      * @returns {Promise<void>}
      */
     async animateRoulette(members, selected) {
         console.log('[UIController] アニメーション開始');
+        console.log('ルーレット表示メンバー:', members.map(m => m.displayName).join(', '));
         console.log('選出されたメンバー:', selected.map(m => m.displayName).join(', '));
         if (this.currentSelectedMembers && this.currentSelectedMembers.length > 0) {
             console.log('保存された結果:', this.currentSelectedMembers.map(item => item.member ? item.member.displayName : item.displayName).join(', '));
@@ -591,9 +592,9 @@ export class UIController {
             this.elements.memberList
         );
         
-        // ルーレットホイールを初期化（選出されたメンバーのみを使用）
+        // ルーレットホイールを初期化（除外後の全メンバーを表示）
         this.rouletteWheel = new RouletteWheel(wheelContainer);
-        this.rouletteWheel.initialize(selected);
+        this.rouletteWheel.initialize(members);
         
         // 各選出メンバーに対してルーレットを回す
         for (let i = 0; i < selected.length; i++) {

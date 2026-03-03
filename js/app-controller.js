@@ -226,8 +226,8 @@ class AppController {
                 // 結果を先に保存（ロール情報を含む）
                 this.ui.currentSelectedMembers = selectedWithRoles;
 
-                // アニメーション表示（選出されたメンバーのみを使用）
-                await this.ui.animateRoulette(selected, selected);
+                // アニメーション表示（除外後の全メンバーと選出されたメンバーを渡す）
+                await this.ui.animateRoulette(availableMembers, selected);
 
                 // 履歴に保存
                 this.resultManager.saveToHistory({
