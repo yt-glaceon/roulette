@@ -258,34 +258,43 @@ export class RouletteWheel {
                          * @returns {number} メンバーのインデックス
                          */
                         getPointerIndex() {
-                            if (this.members.length === 0) return -1;
+                                    if (this.members.length === 0) return -1;
 
-                            const anglePerMember = (Math.PI * 2) / this.members.length;
+                                    const anglePerMember = (Math.PI * 2) / this.members.length;
 
-                            // 針は上部（-90度 = -π/2）に固定されている
-                            const pointerAngle = -Math.PI / 2;
+                                    // 針は上部（-π/2）に固定されている
+                                    const pointerAngle = -Math.PI / 2;
 
-                            // 現在の回転を正規化
-                            const normalizedRotation = this.normalizeAngle(this.rotation);
+                                    // 現在の回転を正規化（0〜2πの範囲に）
+                                    const normalizedRotation = this.normalizeAngle(this.rotation);
 
-                            // 針の位置を正規化
-                            const normalizedPointer = this.normalizeAngle(pointerAngle);
+                                    // 針の絶対位置を正規化
+                                    const normalizedPointer = this.normalizeAngle(pointerAngle);
 
-                            // 針の相対位置を計算（rotationを基準とした針の角度）
-                            // セクション0は normalizedRotation から始まる
-                            // 針がセクション0の開始位置からどれだけ離れているかを計算
-                            let relativeAngle = normalizedPointer - normalizedRotation;
+                                    // 各セクションの中央角度を計算し、針に最も近いセクションを見つける
+                                    let closestIndex = 0;
+                                    let minDistance = Infinity;
 
-                            // 負の角度を正規化
-                            if (relativeAngle < 0) {
-                                relativeAngle += Math.PI * 2;
-                            }
+                                    for (let i = 0; i < this.members.length; i++) {
+                                        // セクションiの中央角度（絶対位置）
+                                        const sectionCenter = this.normalizeAngle(normalizedRotation + anglePerMember * i + anglePerMember / 2);
 
-                            // 針が指しているセクションのインデックスを計算
-                            const index = Math.floor(relativeAngle / anglePerMember);
+                                        // 針とセクション中央の角度差を計算
+                                        let distance = Math.abs(normalizedPointer - sectionCenter);
 
-                            return index % this.members.length;
-                        }
+                                        // 角度差が180度を超える場合は、反対方向の距離を使う
+                                        if (distance > Math.PI) {
+                                            distance = Math.PI * 2 - distance;
+                                        }
+
+                                        if (distance < minDistance) {
+                                            minDistance = distance;
+                                            closestIndex = i;
+                                        }
+                                    }
+
+                                    return closestIndex;
+                                }
 
         /**
          * 角度を0〜2πの範囲に正規化
