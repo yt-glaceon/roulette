@@ -158,7 +158,8 @@ export class RouletteWheel {
         const startTime = Date.now();
         const startRotation = this.rotation;
         
-        console.log(`[RouletteWheel] アニメーション開始: duration=${duration}ms, 選出メンバー=${selectedMember.displayName}`);
+        console.log(`[RouletteWheel] アニメーション開始: duration=${duration}ms, 選出メンバー=${selectedMember.displayName} (インデックス=${selectedIndex})`);
+        console.log(`[RouletteWheel] 計算: anglePerMember=${(anglePerMember * 180 / Math.PI).toFixed(2)}度, targetAngle=${(targetAngle * 180 / Math.PI).toFixed(2)}度, targetRotation=${(this.targetRotation * 180 / Math.PI).toFixed(2)}度`);
         
         return new Promise((resolve) => {
             const animate = () => {
@@ -181,7 +182,9 @@ export class RouletteWheel {
                     this.draw();
                     this.isSpinning = false;
                     const totalTime = Date.now() - startTime;
-                    console.log(`[RouletteWheel] アニメーション完了: 実際の時間=${totalTime}ms`);
+                    const pointerIndex = this.getPointerIndex();
+                    console.log(`[RouletteWheel] アニメーション完了: 実際の時間=${totalTime}ms, 最終rotation=${(this.rotation * 180 / Math.PI).toFixed(2)}度`);
+                    console.log(`[RouletteWheel] 針が指すメンバー: ${this.members[pointerIndex].displayName} (インデックス=${pointerIndex})`);
                     resolve();
                 }
             };
