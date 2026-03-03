@@ -121,7 +121,9 @@ export class SlotMachineAnimation {
         
         for (let i = 0; i < this.columns.length; i++) {
             const column = this.columns[i];
-            const columnDuration = duration - (i * columnDelay);
+            // 列が左から右へ順番に停止するように計算
+            // 列0: 1 * columnDelay, 列1: 2 * columnDelay, 列2: 3 * columnDelay
+            const columnDuration = (i + 1) * columnDelay;
             
             // 列をアニメーション（非同期で開始）
             this.animateColumn(column, selectedMember, selectedIndex, columnDuration);
@@ -133,7 +135,8 @@ export class SlotMachineAnimation {
         }
         
         // 最後の列が停止するまで待機
-        await this.sleep(duration - (this.columns.length - 1) * columnDelay);
+        // 列2のcolumnDurationは3 * columnDelayなので、それに合わせる
+        await this.sleep(this.columns.length * columnDelay);
         
         this.isSpinning = false;
     }

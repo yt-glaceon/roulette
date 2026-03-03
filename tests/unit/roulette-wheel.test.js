@@ -1,7 +1,7 @@
 /**
  * RouletteWheel のユニットテスト
  */
-import { RouletteWheel } from '../../js/roulette-wheel.js';
+import { RouletteWheel } from '../../js/animations/roulette-wheel.js';
 
 describe('RouletteWheel', () => {
     let container;

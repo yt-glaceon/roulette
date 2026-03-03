@@ -138,6 +138,10 @@ export class RouletteWheel {
         
         this.isSpinning = true;
         
+        // 各アニメーションを同じ初期位置から開始するため、回転状態をリセット
+        // これにより、2回目以降のアニメーションでも針が指す位置と選出結果が一致する
+        this.rotation = 0;
+        
         // 選出されたメンバーのインデックスを取得
         const selectedIndex = this.members.findIndex(m => m.id === selectedMember.id);
         const anglePerMember = (Math.PI * 2) / this.members.length;
@@ -147,7 +151,8 @@ export class RouletteWheel {
         
         // 最低回転数を保証（minRotations 以上）
         const extraRotations = minRotations + Math.random() * 2;
-        this.targetRotation = this.rotation + (Math.PI * 2 * extraRotations) + targetAngle;
+        // rotation が常に0なので、計算式を簡素化
+        this.targetRotation = (Math.PI * 2 * extraRotations) + targetAngle;
         
         // アニメーション開始
         const startTime = Date.now();
@@ -190,32 +195,120 @@ export class RouletteWheel {
      * @param {number} anglePerMember - メンバーごとの角度
      * @returns {number} 調整された停止角度
      */
-    calculateTargetAngle(selectedIndex, anglePerMember) {
-        // セクションの中央を基準とする
-        const sectionCenter = anglePerMember / 2;
-        
-        // 基本の目標角度（選出されたメンバーのセクション中央が針に来るように）
-        let targetAngle = -(anglePerMember * selectedIndex) - sectionCenter;
-        
-        // 白線からの距離を確認（5度 = 5 * Math.PI / 180 ラジアン）
-        const whiteLineThreshold = 5 * Math.PI / 180;
-        
-        // セクション中央からのずれを計算（-sectionCenter から +sectionCenter の範囲）
-        // 0がセクション中央、±sectionCenterが白線
-        const offsetFromCenter = 0; // デフォルトは中央
-        
-        // 白線からの最小距離を確保
-        // セクション中央を基準に、白線から whiteLineThreshold 以上離れた位置に調整
-        const maxOffset = sectionCenter - whiteLineThreshold;
-        
-        // ランダムなオフセットを追加（中央付近に収まるように）
-        const randomOffset = (Math.random() - 0.5) * maxOffset * 0.5;
-        
-        // 最終的な目標角度
-        targetAngle += randomOffset;
-        
-        return targetAngle;
-    }
+    /**
+         * 停止角度を計算（白線回避）
+         * @param {number} selectedIndex - 選出されたメンバーのインデックス
+         * @param {number} anglePerMember - メンバーごとの角度
+         * @returns {number} 調整された停止角度
+         */
+        /**
+             * 停止角度を計算（白線回避）
+             * @param {number} selectedIndex - 選出されたメンバーのインデックス
+             * @param {number} anglePerMember - メンバーごとの角度
+             * @returns {number} 調整された停止角度
+             */
+            calculateTargetAngle(selectedIndex, anglePerMember) {
+                // セクションの中央を基準とする
+                const sectionCenter = anglePerMember / 2;
+
+                // 針は上部（-π/2）に固定されている
+                // 目標: 選出されたメンバーのセクション中央が針に来るようにする
+                // セクションiの中央角度（targetRotation基準）: targetRotation + (anglePerMember * i) + sectionCenter
+                // これが針の位置（-π/2）と一致するようにする
+                // targetRotation + (anglePerMember * selectedIndex) + sectionCenter = -π/2 + 2πn (nは整数)
+                // targetRotation = -π/2 - (anglePerMember * selectedIndex) - sectionCenter + 2πn
+                // 
+                // spin()メソッドでは this.targetRotation = this.rotation + (2π * extraRotations) + targetAngle
+                // なので、targetAngle = targetRotation - this.rotation - (2π * extraRotations)
+                // 
+                // しかし、ここではthis.rotationやextraRotationsにアクセスできないので、
+                // 相対的な角度として計算する
+                // targetAngle = -π/2 - (anglePerMember * selectedIndex) - sectionCenter
+                // これは「現在の位置から、選出されたメンバーのセクション中央が針に来るまでの角度」
+                let targetAngle = -Math.PI / 2 - (anglePerMember * selectedIndex) - sectionCenter;
+
+                // 白線からの距離を確認（5度 = 5 * Math.PI / 180 ラジアン）
+                const whiteLineThreshold = 5 * Math.PI / 180;
+
+                // 白線からの最小距離を確保
+                // セクション中央を基準に、白線から whiteLineThreshold 以上離れた位置に調整
+                const maxOffset = sectionCenter - whiteLineThreshold;
+
+                // ランダムなオフセットを追加（中央付近に収まるように）
+                const randomOffset = (Math.random() - 0.5) * maxOffset * 0.5;
+
+                // 最終的な目標角度
+                targetAngle += randomOffset;
+
+                return targetAngle;
+            }
+    /**
+     * 針が指しているメンバーのインデックスを取得
+     * @returns {number} メンバーのインデックス
+     */
+    /**
+         * 針が指しているメンバーのインデックスを取得
+         * @returns {number} メンバーのインデックス
+         */
+        /**
+             * 針が指しているメンバーのインデックスを取得
+             * @returns {number} メンバーのインデックス
+             */
+            /**
+                 * 針が指しているメンバーのインデックスを取得
+                 * @returns {number} メンバーのインデックス
+                 */
+                /**
+                     * 針が指しているメンバーのインデックスを取得
+                     * @returns {number} メンバーのインデックス
+                     */
+                    /**
+                         * 針が指しているメンバーのインデックスを取得
+                         * @returns {number} メンバーのインデックス
+                         */
+                        getPointerIndex() {
+                            if (this.members.length === 0) return -1;
+
+                            const anglePerMember = (Math.PI * 2) / this.members.length;
+
+                            // 針は上部（-90度 = -π/2）に固定されている
+                            const pointerAngle = -Math.PI / 2;
+
+                            // 現在の回転を正規化
+                            const normalizedRotation = this.normalizeAngle(this.rotation);
+
+                            // 針の位置を正規化
+                            const normalizedPointer = this.normalizeAngle(pointerAngle);
+
+                            // 針の相対位置を計算（rotationを基準とした針の角度）
+                            // セクション0は normalizedRotation から始まる
+                            // 針がセクション0の開始位置からどれだけ離れているかを計算
+                            let relativeAngle = normalizedPointer - normalizedRotation;
+
+                            // 負の角度を正規化
+                            if (relativeAngle < 0) {
+                                relativeAngle += Math.PI * 2;
+                            }
+
+                            // 針が指しているセクションのインデックスを計算
+                            const index = Math.floor(relativeAngle / anglePerMember);
+
+                            return index % this.members.length;
+                        }
+
+        /**
+         * 角度を0〜2πの範囲に正規化
+         * @param {number} angle - 角度（ラジアン）
+         * @returns {number} 正規化された角度
+         */
+        normalizeAngle(angle) {
+            let normalized = angle % (Math.PI * 2);
+            if (normalized < 0) {
+                normalized += Math.PI * 2;
+            }
+            return normalized;
+        }
+
 
     /**
      * アニメーションを停止
