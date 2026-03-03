@@ -93,15 +93,21 @@ cp .env.example .env
 npm run dev
 ```
 
-### 4. フロントエンドの起動（ローカル）
+### 4. フロントエンドのセットアップ（ローカル）
 
 ```bash
-# Live Server 拡張機能を使用
-# または
-python -m http.server 5500
+# ルートディレクトリで
+npm install
+
+# 環境変数を設定
+cp .env.example .env
+# .env ファイルを編集（開発環境ではデフォルトのままでOK）
+
+# 開発サーバーを起動
+npm run dev
 ```
 
-ブラウザで `http://127.0.0.1:5500` にアクセス
+ブラウザで `http://localhost:5500` にアクセス
 
 ### 5. Render へのデプロイ
 
@@ -121,13 +127,29 @@ python -m http.server 5500
 
 ### 6. GitHub Pages へのデプロイ
 
-1. GitHub リポジトリの Settings → Pages
-2. Source を「main」ブランチに設定
-3. `js/config.js` を編集:
-   ```javascript
-   return 'https://your-app.onrender.com';
-   ```
-4. コミット & プッシュ
+#### 6.1 GitHub リポジトリの設定
+
+1. GitHub リポジトリの Settings → Secrets and variables → Actions
+2. 「New repository secret」をクリック
+3. 以下のシークレットを追加:
+   - Name: `VITE_API_URL`
+   - Secret: RenderのURL（例: `https://your-app.onrender.com`）
+
+#### 6.2 GitHub Pages の有効化
+
+1. Settings → Pages
+2. Source を「GitHub Actions」に設定
+
+#### 6.3 デプロイ
+
+```bash
+git add .
+git commit -m "Setup Vite and environment variables"
+git push origin main
+```
+
+プッシュすると自動的にビルド＆デプロイが実行されます。
+Actions タブでデプロイの進行状況を確認できます。
 
 ## 技術スタック
 
