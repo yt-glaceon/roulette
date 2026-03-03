@@ -211,18 +211,24 @@ export class RouletteWheel {
              * @returns {number} 調整された停止角度
              */
             calculateTargetAngle(selectedIndex, anglePerMember) {
-                    // 針は上部（-π/2 = -90度）に固定されている
-                    // セクションiの開始角度: rotation + anglePerMember * i
-                    // セクションiの中央角度: rotation + anglePerMember * i + anglePerMember / 2
+                    // 針は上部（-π/2 = -90度 = 270度）に固定されている
+                    // drawメソッドでは、セクションiの開始角度 = rotation + anglePerMember * i
+                    // セクションiの中央角度 = rotation + anglePerMember * i + anglePerMember / 2
 
-                    // 目標: rotation = 0 から回転して、選出されたセクションの中央が針の位置に来るようにする
-                    // 針の位置（-π/2）= rotation + anglePerMember * selectedIndex + anglePerMember / 2
+                    // 目標: 選出されたセクションの中央が針の位置（-π/2）に来るようにrotationを設定
+                    // rotation + anglePerMember * selectedIndex + anglePerMember / 2 = -π/2 (mod 2π)
                     // rotation = -π/2 - anglePerMember * selectedIndex - anglePerMember / 2
 
+                    // しかし、負の角度になるので、2πを足して正規化する必要がある
                     const sectionCenter = anglePerMember / 2;
                     const pointerAngle = -Math.PI / 2;
 
                     let targetAngle = pointerAngle - (anglePerMember * selectedIndex) - sectionCenter;
+
+                    // 負の角度を正規化（0〜2πの範囲に）
+                    while (targetAngle < 0) {
+                        targetAngle += Math.PI * 2;
+                    }
 
                     // 白線回避: セクション中央から少しずらす（±5度以内）
                     const whiteLineThreshold = 5 * Math.PI / 180;
