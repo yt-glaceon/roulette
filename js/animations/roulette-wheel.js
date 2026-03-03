@@ -281,9 +281,13 @@ export class RouletteWheel {
                                     let closestIndex = 0;
                                     let minDistance = Infinity;
 
+                                    console.log(`[getPointerIndex] rotation=${(this.rotation * 180 / Math.PI).toFixed(2)}度, normalizedRotation=${(normalizedRotation * 180 / Math.PI).toFixed(2)}度, 針=${(normalizedPointer * 180 / Math.PI).toFixed(2)}度`);
+
                                     for (let i = 0; i < this.members.length; i++) {
                                         // セクションiの中央角度（絶対位置）
                                         const sectionCenter = this.normalizeAngle(normalizedRotation + anglePerMember * i + anglePerMember / 2);
+
+                                        console.log(`  セクション${i} (${this.members[i].displayName}): 中央=${(sectionCenter * 180 / Math.PI).toFixed(2)}度`);
 
                                         // 針とセクション中央の角度差を計算
                                         let distance = Math.abs(normalizedPointer - sectionCenter);
@@ -298,6 +302,8 @@ export class RouletteWheel {
                                             closestIndex = i;
                                         }
                                     }
+
+                                    console.log(`  → 最も近いセクション: ${closestIndex} (${this.members[closestIndex].displayName}), 距離=${(minDistance * 180 / Math.PI).toFixed(2)}度`);
 
                                     return closestIndex;
                                 }
