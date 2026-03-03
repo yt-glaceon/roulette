@@ -212,25 +212,17 @@ export class RouletteWheel {
              */
             calculateTargetAngle(selectedIndex, anglePerMember) {
                     // 針は上部（-π/2 = -90度）に固定されている
-                    // 目標: 選出されたメンバーのセクション中央が針の位置に来るようにルーレットを回転させる
+                    // セクションiの開始角度: rotation + anglePerMember * i
+                    // セクションiの中央角度: rotation + anglePerMember * i + anglePerMember / 2
 
-                    // セクションの中央オフセット
+                    // 目標: rotation = 0 から回転して、選出されたセクションの中央が針の位置に来るようにする
+                    // 針の位置（-π/2）= rotation + anglePerMember * selectedIndex + anglePerMember / 2
+                    // rotation = -π/2 - anglePerMember * selectedIndex - anglePerMember / 2
+
                     const sectionCenter = anglePerMember / 2;
-
-                    // 選出されたメンバーのセクション開始角度（rotation = 0の場合）
-                    // セクション0: 0, セクション1: anglePerMember, セクション2: anglePerMember * 2, ...
-                    const sectionStartAngle = anglePerMember * selectedIndex;
-
-                    // 選出されたメンバーのセクション中央角度
-                    const sectionCenterAngle = sectionStartAngle + sectionCenter;
-
-                    // 針の位置（上部 = -π/2）
                     const pointerAngle = -Math.PI / 2;
 
-                    // 目標: sectionCenterAngle が pointerAngle の位置に来るように回転
-                    // rotation + sectionCenterAngle = pointerAngle (mod 2π)
-                    // rotation = pointerAngle - sectionCenterAngle
-                    let targetAngle = pointerAngle - sectionCenterAngle;
+                    let targetAngle = pointerAngle - (anglePerMember * selectedIndex) - sectionCenter;
 
                     // 白線回避: セクション中央から少しずらす（±5度以内）
                     const whiteLineThreshold = 5 * Math.PI / 180;
