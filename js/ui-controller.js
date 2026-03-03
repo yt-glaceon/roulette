@@ -176,6 +176,10 @@ export class UIController {
             this.elements.memberList.style.display = '';
             const controls = document.querySelector('.roulette-controls');
             if (controls) controls.style.display = '';
+            
+            // ロール入力フィールドを表示状態に戻す
+            const roleContainer = document.getElementById('role-input-container');
+            if (roleContainer) roleContainer.style.display = '';
 
             // メンバーリストをクリア
             this.elements.memberList.innerHTML = '';
@@ -452,13 +456,9 @@ export class UIController {
                 fieldsWrapper.appendChild(inputWrapper);
             }
         } else if (count < currentCount) {
-            // フィールドを削除し、非表示になったフィールドの内容をリセット
+            // フィールドを削除（後ろから削除）
             for (let i = currentCount - 1; i >= count; i--) {
                 const wrapper = currentInputs[i];
-                const input = wrapper.querySelector('.role-input');
-                if (input) {
-                    input.value = ''; // 内容をリセット
-                }
                 wrapper.remove();
             }
         }
@@ -563,6 +563,10 @@ export class UIController {
         const controls = document.querySelector('.roulette-controls');
         if (controls) controls.style.display = 'none';
         
+        // ロール入力フィールドを非表示
+        const roleContainer = document.getElementById('role-input-container');
+        if (roleContainer) roleContainer.style.display = 'none';
+        
         // 結果を見るボタンを非表示（アニメーション中）
         if (this.elements.showResultsContainer) {
             this.elements.showResultsContainer.classList.add('hidden');
@@ -587,38 +591,33 @@ export class UIController {
             this.elements.memberList
         );
         
-        // ルーレットホイールを初期化
+        // ルーレットホイールを初期化（選出されたメンバーのみを使用）
         this.rouletteWheel = new RouletteWheel(wheelContainer);
-        this.rouletteWheel.initialize(members);
+        this.rouletteWheel.initialize(selected);
         
         // 各選出メンバーに対してルーレットを回す
         for (let i = 0; i < selected.length; i++) {
-            const isLastSpin = i === selected.length - 1;
+            await this.rouletteWheel.spin(selected[i]);
             
-            if (isLastSpin) {
-                // 最後のスピンの場合、アニメーション完了を待たずにボタンを表示
-                const spinPromise = this.rouletteWheel.spin(selected[i]);
-                
-                // アニメーションの80%完了時点でボタンを表示
-                setTimeout(() => {
-                    if (this.elements.showResultsContainer) {
-                        this.elements.showResultsContainer.classList.remove('hidden');
-                        
-                        // ボタンが見える位置までスクロール
-                        setTimeout(() => {
-                            this.elements.showResultsContainer.scrollIntoView({ 
-                                behavior: 'smooth', 
-                                block: 'center' 
-                            });
-                        }, 100);
-                    }
-                }, 1600);
-                
-                await spinPromise;
-            } else {
-                await this.rouletteWheel.spin(selected[i]);
+            // 最後のスピン以外は待機
+            if (i < selected.length - 1) {
                 await this.sleep(500);
             }
+        }
+        
+        // 最後のアニメーション終了後1秒待ってからボタンを表示
+        await this.sleep(1000);
+        
+        if (this.elements.showResultsContainer) {
+            this.elements.showResultsContainer.classList.remove('hidden');
+            
+            // ボタンが見える位置までスクロール
+            setTimeout(() => {
+                this.elements.showResultsContainer.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'center' 
+                });
+            }, 100);
         }
     }
 
