@@ -149,18 +149,26 @@ export class SlotMachineAnimation {
      * @param {number} duration - アニメーション時間
      */
     animateColumn(column, selectedMember, selectedIndex, duration) {
-        const reel = column.reel;
-        const itemHeight = 120; // スロットアイテムの高さ
-        const membersCount = this.members.length;
-        
-        // 目標位置を計算（選出されたメンバーが中央に来るように）
-        const repeatIndex = 5; // 5回目の繰り返しで停止
-        const targetPosition = -(repeatIndex * membersCount + selectedIndex) * itemHeight;
-        
-        // アニメーション開始
-        reel.style.transition = `transform ${duration}ms cubic-bezier(0.25, 0.1, 0.25, 1)`;
-        reel.style.transform = `translateY(${targetPosition}px)`;
-    }
+            const reel = column.reel;
+            const itemHeight = 120; // スロットアイテムの高さ
+            const membersCount = this.members.length;
+
+            // 目標位置を計算（選出されたメンバーが中央に来るように）
+            const repeatIndex = 5; // 5回目の繰り返しで停止
+            const targetPosition = -(repeatIndex * membersCount + selectedIndex) * itemHeight;
+
+            // 初期位置をリセット（transitionなし）
+            reel.style.transition = 'none';
+            reel.style.transform = 'translateY(0px)';
+
+            // 次のフレームでアニメーション開始（transitionを確実に適用）
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    reel.style.transition = `transform ${duration}ms cubic-bezier(0.25, 0.1, 0.25, 1)`;
+                    reel.style.transform = `translateY(${targetPosition}px)`;
+                });
+            });
+        }
 
     /**
      * 指定時間待機

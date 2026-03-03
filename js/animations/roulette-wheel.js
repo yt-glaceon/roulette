@@ -208,40 +208,36 @@ export class RouletteWheel {
              * @returns {number} 調整された停止角度
              */
             calculateTargetAngle(selectedIndex, anglePerMember) {
-                // セクションの中央を基準とする
-                const sectionCenter = anglePerMember / 2;
+                    // 針は上部（-π/2 = -90度）に固定されている
+                    // 目標: 選出されたメンバーのセクション中央が針の位置に来るようにルーレットを回転させる
 
-                // 針は上部（-π/2）に固定されている
-                // 目標: 選出されたメンバーのセクション中央が針に来るようにする
-                // セクションiの中央角度（targetRotation基準）: targetRotation + (anglePerMember * i) + sectionCenter
-                // これが針の位置（-π/2）と一致するようにする
-                // targetRotation + (anglePerMember * selectedIndex) + sectionCenter = -π/2 + 2πn (nは整数)
-                // targetRotation = -π/2 - (anglePerMember * selectedIndex) - sectionCenter + 2πn
-                // 
-                // spin()メソッドでは this.targetRotation = this.rotation + (2π * extraRotations) + targetAngle
-                // なので、targetAngle = targetRotation - this.rotation - (2π * extraRotations)
-                // 
-                // しかし、ここではthis.rotationやextraRotationsにアクセスできないので、
-                // 相対的な角度として計算する
-                // targetAngle = -π/2 - (anglePerMember * selectedIndex) - sectionCenter
-                // これは「現在の位置から、選出されたメンバーのセクション中央が針に来るまでの角度」
-                let targetAngle = -Math.PI / 2 - (anglePerMember * selectedIndex) - sectionCenter;
+                    // セクションの中央オフセット
+                    const sectionCenter = anglePerMember / 2;
 
-                // 白線からの距離を確認（5度 = 5 * Math.PI / 180 ラジアン）
-                const whiteLineThreshold = 5 * Math.PI / 180;
+                    // 選出されたメンバーのセクション開始角度（rotation = 0の場合）
+                    // セクション0: 0, セクション1: anglePerMember, セクション2: anglePerMember * 2, ...
+                    const sectionStartAngle = anglePerMember * selectedIndex;
 
-                // 白線からの最小距離を確保
-                // セクション中央を基準に、白線から whiteLineThreshold 以上離れた位置に調整
-                const maxOffset = sectionCenter - whiteLineThreshold;
+                    // 選出されたメンバーのセクション中央角度
+                    const sectionCenterAngle = sectionStartAngle + sectionCenter;
 
-                // ランダムなオフセットを追加（中央付近に収まるように）
-                const randomOffset = (Math.random() - 0.5) * maxOffset * 0.5;
+                    // 針の位置（上部 = -π/2）
+                    const pointerAngle = -Math.PI / 2;
 
-                // 最終的な目標角度
-                targetAngle += randomOffset;
+                    // 目標: sectionCenterAngle が pointerAngle の位置に来るように回転
+                    // rotation + sectionCenterAngle = pointerAngle (mod 2π)
+                    // rotation = pointerAngle - sectionCenterAngle
+                    let targetAngle = pointerAngle - sectionCenterAngle;
 
-                return targetAngle;
-            }
+                    // 白線回避: セクション中央から少しずらす（±5度以内）
+                    const whiteLineThreshold = 5 * Math.PI / 180;
+                    const maxOffset = anglePerMember / 2 - whiteLineThreshold;
+                    const randomOffset = (Math.random() - 0.5) * maxOffset * 0.5;
+
+                    targetAngle += randomOffset;
+
+                    return targetAngle;
+                }
     /**
      * 針が指しているメンバーのインデックスを取得
      * @returns {number} メンバーのインデックス
