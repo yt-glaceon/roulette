@@ -211,17 +211,23 @@ export class RouletteWheel {
              * @returns {number} 調整された停止角度
              */
             calculateTargetAngle(selectedIndex, anglePerMember) {
-                    // 針は上部（-π/2 = -90度 = 270度）に固定されている
-                    // drawメソッドでは、セクションiの中央角度 = rotation + anglePerMember * i + anglePerMember / 2
+                    // 針は上部（270度）に固定されている
+                    // rotation = 0 の状態で、セクションiの中央角度 = anglePerMember * i + anglePerMember / 2
+
+                    // 例: 4人の場合（anglePerMember = 90度）
+                    // セクション0の中央: 45度
+                    // セクション1の中央: 135度
+                    // セクション2の中央: 225度
+                    // セクション3の中央: 315度
 
                     // 目標: 選出されたセクションの中央が針の位置（270度）に来るようにrotationを設定
-                    // rotation + anglePerMember * selectedIndex + anglePerMember / 2 = 270度 (mod 360度)
-                    // rotation = 270度 - anglePerMember * selectedIndex - anglePerMember / 2
+                    // rotation + (anglePerMember * selectedIndex + anglePerMember / 2) = 270度 (mod 360度)
+                    // rotation = 270度 - (anglePerMember * selectedIndex + anglePerMember / 2)
 
-                    const sectionCenter = anglePerMember / 2;
+                    const sectionCenterAt0 = anglePerMember * selectedIndex + anglePerMember / 2;
                     const pointerAngle = 270 * Math.PI / 180; // 270度をラジアンに変換
 
-                    let targetAngle = pointerAngle - (anglePerMember * selectedIndex) - sectionCenter;
+                    let targetAngle = pointerAngle - sectionCenterAt0;
 
                     // 負の角度を正規化（0〜2πの範囲に）
                     while (targetAngle < 0) {
@@ -235,7 +241,7 @@ export class RouletteWheel {
 
                     targetAngle += randomOffset;
 
-                    console.log(`[calculateTargetAngle] selectedIndex=${selectedIndex}, pointerAngle=${(pointerAngle * 180 / Math.PI).toFixed(2)}度, targetAngle=${(targetAngle * 180 / Math.PI).toFixed(2)}度`);
+                    console.log(`[calculateTargetAngle] selectedIndex=${selectedIndex}, sectionCenterAt0=${(sectionCenterAt0 * 180 / Math.PI).toFixed(2)}度, targetAngle=${(targetAngle * 180 / Math.PI).toFixed(2)}度`);
 
                     return targetAngle;
                 }
