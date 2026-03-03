@@ -258,7 +258,7 @@ p {
 .roulette-controls {
     display: flex;
     gap: var(--spacing);
-    align-items: center;
+    align-items: flex-end;
     justify-content: center;
     flex-wrap: wrap;
 }
@@ -267,7 +267,7 @@ p {
     font-weight: 600;
 }
 
-.roulette-controls input {
+.roulette-controls input[type="number"] {
     padding: 8px 12px;
     border: 2px solid var(--secondary-color);
     border-radius: var(--border-radius);
@@ -275,6 +275,12 @@ p {
     color: var(--text-primary);
     font-size: 1rem;
     width: 80px;
+}
+
+.roulette-controls > label {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 }
 
 /* アニメーション選択 */
