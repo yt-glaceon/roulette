@@ -1,6 +1,10 @@
 import { defineConfig } from 'vite';
 
 export default defineConfig({
+  // GitHub Pages用のベースパス
+  // リポジトリ名が discord-voice-roulette の場合
+  base: '/discord-voice-roulette/',
+  
   // ビルド設定
   build: {
     outDir: 'dist',
