@@ -214,12 +214,6 @@ export class RouletteWheel {
                     // 針は上部（270度）に固定されている
                     // rotation = 0 の状態で、セクションiの中央角度 = anglePerMember * i + anglePerMember / 2
 
-                    // 例: 4人の場合（anglePerMember = 90度）
-                    // セクション0の中央: 45度
-                    // セクション1の中央: 135度
-                    // セクション2の中央: 225度
-                    // セクション3の中央: 315度
-
                     // 目標: 選出されたセクションの中央が針の位置（270度）に来るようにrotationを設定
                     // rotation + (anglePerMember * selectedIndex + anglePerMember / 2) = 270度 (mod 360度)
                     // rotation = 270度 - (anglePerMember * selectedIndex + anglePerMember / 2)
@@ -233,13 +227,6 @@ export class RouletteWheel {
                     while (targetAngle < 0) {
                         targetAngle += Math.PI * 2;
                     }
-
-                    // 白線回避: セクション中央から少しずらす（±5度以内）
-                    const whiteLineThreshold = 5 * Math.PI / 180;
-                    const maxOffset = anglePerMember / 2 - whiteLineThreshold;
-                    const randomOffset = (Math.random() - 0.5) * maxOffset * 0.5;
-
-                    targetAngle += randomOffset;
 
                     console.log(`[calculateTargetAngle] selectedIndex=${selectedIndex}, sectionCenterAt0=${(sectionCenterAt0 * 180 / Math.PI).toFixed(2)}度, targetAngle=${(targetAngle * 180 / Math.PI).toFixed(2)}度`);
 
