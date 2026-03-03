@@ -116,9 +116,6 @@ export class SlotMachineAnimation {
         // 選出されたメンバーのインデックスを取得
         const selectedIndex = this.members.findIndex(m => m.id === selectedMember.id);
         
-        console.log(`[SlotMachine] アニメーション開始: 選出メンバー=${selectedMember.displayName} (インデックス=${selectedIndex})`);
-        console.log(`[SlotMachine] メンバーリスト: ${this.members.map((m, i) => `${i}:${m.displayName}`).join(', ')}`);
-        
         // 各列を順番にアニメーション
         const columnDelay = 1000; // 列ごとの停止時間差
         
@@ -157,8 +154,6 @@ export class SlotMachineAnimation {
             const repeatIndex = 5; // 5回目の繰り返しで停止
             const targetIndex = repeatIndex * membersCount + selectedIndex;
             const targetPosition = -(targetIndex - 1) * itemHeight;
-            
-            console.log(`[animateColumn] selectedIndex=${selectedIndex}, targetIndex=${targetIndex}, targetPosition=${targetPosition}px, duration=${duration}ms`);
 
             // 初期位置をリセット（transitionなし）
             reel.style.transition = 'none';

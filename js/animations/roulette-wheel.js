@@ -158,9 +158,6 @@ export class RouletteWheel {
         const startTime = Date.now();
         const startRotation = this.rotation;
         
-        console.log(`[RouletteWheel] アニメーション開始: duration=${duration}ms, 選出メンバー=${selectedMember.displayName} (インデックス=${selectedIndex})`);
-        console.log(`[RouletteWheel] 計算: anglePerMember=${(anglePerMember * 180 / Math.PI).toFixed(2)}度, targetAngle=${(targetAngle * 180 / Math.PI).toFixed(2)}度, targetRotation=${(this.targetRotation * 180 / Math.PI).toFixed(2)}度`);
-        
         return new Promise((resolve) => {
             const animate = () => {
                 const elapsed = Date.now() - startTime;
@@ -181,10 +178,6 @@ export class RouletteWheel {
                     this.rotation = this.targetRotation;
                     this.draw();
                     this.isSpinning = false;
-                    const totalTime = Date.now() - startTime;
-                    const pointerIndex = this.getPointerIndex();
-                    console.log(`[RouletteWheel] アニメーション完了: 実際の時間=${totalTime}ms, 最終rotation=${(this.rotation * 180 / Math.PI).toFixed(2)}度`);
-                    console.log(`[RouletteWheel] 針が指すメンバー: ${this.members[pointerIndex].displayName} (インデックス=${pointerIndex})`);
                     resolve();
                 }
             };
@@ -227,8 +220,6 @@ export class RouletteWheel {
                     while (targetAngle < 0) {
                         targetAngle += Math.PI * 2;
                     }
-
-                    console.log(`[calculateTargetAngle] selectedIndex=${selectedIndex}, sectionCenterAt0=${(sectionCenterAt0 * 180 / Math.PI).toFixed(2)}度, targetAngle=${(targetAngle * 180 / Math.PI).toFixed(2)}度`);
 
                     return targetAngle;
                 }
@@ -274,13 +265,9 @@ export class RouletteWheel {
                                     let closestIndex = 0;
                                     let minDistance = Infinity;
 
-                                    console.log(`[getPointerIndex] rotation=${(this.rotation * 180 / Math.PI).toFixed(2)}度, normalizedRotation=${(normalizedRotation * 180 / Math.PI).toFixed(2)}度, 針=${(normalizedPointer * 180 / Math.PI).toFixed(2)}度`);
-
                                     for (let i = 0; i < this.members.length; i++) {
                                         // セクションiの中央角度（絶対位置）
                                         const sectionCenter = this.normalizeAngle(normalizedRotation + anglePerMember * i + anglePerMember / 2);
-
-                                        console.log(`  セクション${i} (${this.members[i].displayName}): 中央=${(sectionCenter * 180 / Math.PI).toFixed(2)}度`);
 
                                         // 針とセクション中央の角度差を計算
                                         let distance = Math.abs(normalizedPointer - sectionCenter);
@@ -295,8 +282,6 @@ export class RouletteWheel {
                                             closestIndex = i;
                                         }
                                     }
-
-                                    console.log(`  → 最も近いセクション: ${closestIndex} (${this.members[closestIndex].displayName}), 距離=${(minDistance * 180 / Math.PI).toFixed(2)}度`);
 
                                     return closestIndex;
                                 }
