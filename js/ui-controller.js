@@ -1,4 +1,7 @@
-import { RouletteWheel } from './roulette-wheel.js';
+import { RouletteWheel } from './animations/roulette-wheel.js';
+import { SlotMachineAnimation } from './animations/slot-machine.js';
+import { DrumRollAnimation } from './animations/drum-roll.js';
+import { CardFlipAnimation } from './animations/card-flip.js';
 
 /**
  * UI コントローラー
@@ -20,12 +23,19 @@ export class UIController {
             memberList: document.getElementById('member-list'),
             resultList: document.getElementById('result-list'),
             selectCount: document.getElementById('select-count'),
-            showResultsContainer: document.getElementById('show-results-container')
+            showResultsContainer: document.getElementById('show-results-container'),
+            animationType: document.getElementById('animation-type'),
+            animationDuration: document.getElementById('animation-duration'),
+            durationValue: document.getElementById('duration-value')
         };
 
         this.currentMembers = [];
         this.currentSelectedMembers = [];
         this.rouletteWheel = null;
+        
+        // アニメーション方式のlocalStorageキー
+        this.ANIMATION_TYPE_KEY = 'roulette_animation_type';
+        this.ANIMATION_DURATION_KEY = 'roulette_animation_duration';
     }
 
     /**
@@ -192,6 +202,31 @@ export class UIController {
             // 選出人数の最大値を設定
             this.elements.selectCount.max = members.length;
             this.elements.selectCount.value = Math.min(1, members.length);
+            
+            // アニメーション方式を復元
+            if (this.elements.animationType) {
+                const savedType = this.loadAnimationType();
+                this.elements.animationType.value = savedType;
+                
+                // ドロップダウン変更時のイベントリスナーを設定
+                this.elements.animationType.addEventListener('change', (e) => {
+                    this.saveAnimationType(e.target.value);
+                });
+            }
+            
+            // アニメーション時間を復元
+            if (this.elements.animationDuration && this.elements.durationValue) {
+                const savedDuration = this.loadAnimationDuration();
+                this.elements.animationDuration.value = savedDuration;
+                this.elements.durationValue.textContent = savedDuration;
+                
+                // スライダー変更時のイベントリスナーを設定
+                this.elements.animationDuration.addEventListener('input', (e) => {
+                    const duration = parseInt(e.target.value);
+                    this.elements.durationValue.textContent = duration;
+                    this.saveAnimationDuration(duration);
+                });
+            }
 
             // メンバーカードを作成(除外チェックボックス付き)
             members.forEach(member => {
@@ -573,37 +608,80 @@ export class UIController {
             this.elements.showResultsContainer.classList.add('hidden');
         }
         
-        // 既存のルーレットホイールコンテナを削除
-        let wheelContainer = document.getElementById('roulette-wheel-container');
-        if (wheelContainer) {
-            wheelContainer.remove();
+        // 既存のアニメーションコンテナを削除
+        let animationContainer = document.getElementById('roulette-wheel-container');
+        if (animationContainer) {
+            animationContainer.remove();
         }
         
-        // ルーレットホイール用のコンテナを作成
-        wheelContainer = document.createElement('div');
-        wheelContainer.id = 'roulette-wheel-container';
-        wheelContainer.style.display = 'flex';
-        wheelContainer.style.justifyContent = 'center';
-        wheelContainer.style.alignItems = 'center';
-        wheelContainer.style.padding = '20px';
-        wheelContainer.style.flexDirection = 'column';
+        // アニメーション用のコンテナを作成
+        animationContainer = document.createElement('div');
+        animationContainer.id = 'roulette-wheel-container';
+        animationContainer.style.display = 'flex';
+        animationContainer.style.justifyContent = 'center';
+        animationContainer.style.alignItems = 'center';
+        animationContainer.style.padding = '20px';
+        animationContainer.style.flexDirection = 'column';
         this.screens.roulette.querySelector('.container').insertBefore(
-            wheelContainer,
+            animationContainer,
             this.elements.memberList
         );
         
-        // ルーレットホイールを初期化（除外後の全メンバーを表示）
-        this.rouletteWheel = new RouletteWheel(wheelContainer);
-        this.rouletteWheel.initialize(members);
+        // アニメーション方式と時間を取得
+        const animationType = this.loadAnimationType();
+        const animationDuration = this.loadAnimationDuration() * 1000; // 秒をミリ秒に変換
         
-        // 各選出メンバーに対してルーレットを回す
-        for (let i = 0; i < selected.length; i++) {
-            await this.rouletteWheel.spin(selected[i]);
-            
-            // 最後のスピン以外は待機
-            if (i < selected.length - 1) {
-                await this.sleep(500);
+        console.log(`[UIController] アニメーション方式: ${animationType}, 時間: ${animationDuration}ms`);
+        
+        // アニメーションクラスを選択してインスタンス化
+        let animation;
+        try {
+            switch (animationType) {
+                case 'slot':
+                    animation = new SlotMachineAnimation(animationContainer);
+                    break;
+                case 'drum':
+                    animation = new DrumRollAnimation(animationContainer);
+                    break;
+                case 'card':
+                    animation = new CardFlipAnimation(animationContainer);
+                    break;
+                case 'wheel':
+                default:
+                    animation = new RouletteWheel(animationContainer);
+                    break;
             }
+            
+            // アニメーションを初期化
+            animation.initialize(members);
+            
+            // 各選出メンバーに対してアニメーションを実行
+            for (let i = 0; i < selected.length; i++) {
+                await animation.spin(selected[i], { duration: animationDuration });
+                
+                // 最後のスピン以外は待機
+                if (i < selected.length - 1) {
+                    await this.sleep(500);
+                }
+            }
+            
+            // アニメーションインスタンスを保存（クリーンアップ用）
+            this.rouletteWheel = animation;
+            
+        } catch (error) {
+            console.error('[UIController] アニメーション実行エラー:', error);
+            // エラー時は円形ルーレットにフォールバック
+            animation = new RouletteWheel(animationContainer);
+            animation.initialize(members);
+            
+            for (let i = 0; i < selected.length; i++) {
+                await animation.spin(selected[i], { duration: animationDuration });
+                if (i < selected.length - 1) {
+                    await this.sleep(500);
+                }
+            }
+            
+            this.rouletteWheel = animation;
         }
         
         // 最後のアニメーション終了後1秒待ってからボタンを表示
@@ -683,5 +761,65 @@ export class UIController {
      */
     sleep(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
+    }
+    
+    /**
+     * アニメーション方式をlocalStorageに保存
+     * @param {string} type - アニメーション方式 ('wheel' | 'slot' | 'card' | 'drum')
+     */
+    saveAnimationType(type) {
+        try {
+            localStorage.setItem(this.ANIMATION_TYPE_KEY, type);
+            console.log(`[UIController] アニメーション方式を保存: ${type}`);
+        } catch (error) {
+            console.error('[UIController] localStorage保存エラー:', error);
+        }
+    }
+    
+    /**
+     * アニメーション方式をlocalStorageから読み込み
+     * @returns {string} アニメーション方式（デフォルト: 'wheel'）
+     */
+    loadAnimationType() {
+        try {
+            const type = localStorage.getItem(this.ANIMATION_TYPE_KEY);
+            // 値がない場合はデフォルトの'wheel'を返す
+            const animationType = type || 'wheel';
+            console.log(`[UIController] アニメーション方式を読み込み: ${animationType}`);
+            return animationType;
+        } catch (error) {
+            console.error('[UIController] localStorage読み込みエラー:', error);
+            return 'wheel'; // エラー時もデフォルト値を返す
+        }
+    }
+    
+    /**
+     * アニメーション時間をlocalStorageに保存
+     * @param {number} duration - アニメーション時間（秒）
+     */
+    saveAnimationDuration(duration) {
+        try {
+            localStorage.setItem(this.ANIMATION_DURATION_KEY, duration.toString());
+            console.log(`[UIController] アニメーション時間を保存: ${duration}秒`);
+        } catch (error) {
+            console.error('[UIController] localStorage保存エラー:', error);
+        }
+    }
+    
+    /**
+     * アニメーション時間をlocalStorageから読み込み
+     * @returns {number} アニメーション時間（デフォルト: 6秒）
+     */
+    loadAnimationDuration() {
+        try {
+            const duration = localStorage.getItem(this.ANIMATION_DURATION_KEY);
+            // 値がない場合はデフォルトの6秒を返す
+            const animationDuration = duration ? parseInt(duration) : 6;
+            console.log(`[UIController] アニメーション時間を読み込み: ${animationDuration}秒`);
+            return animationDuration;
+        } catch (error) {
+            console.error('[UIController] localStorage読み込みエラー:', error);
+            return 6; // エラー時もデフォルト値を返す
+        }
     }
 }

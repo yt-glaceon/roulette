@@ -26,6 +26,22 @@
                 <div class="roulette-controls">
                     <label for="select-count">選出人数:</label>
                     <input type="number" id="select-count" min="1" value="1">
+                    
+                    <div class="animation-selector">
+                        <label for="animation-type">アニメーション方式:</label>
+                        <select id="animation-type" class="animation-select">
+                            <option value="wheel">円形ルーレット</option>
+                            <option value="slot">スロットマシン</option>
+                            <option value="card">カードめくり</option>
+                            <option value="drum">ドラムロール</option>
+                        </select>
+                    </div>
+                    
+                    <div class="animation-duration-selector">
+                        <label for="animation-duration">アニメーション時間: <span id="duration-value">6</span>秒</label>
+                        <input type="range" id="animation-duration" class="duration-slider" min="3" max="10" value="6" step="1">
+                    </div>
+                    
                     <button id="start-roulette" class="btn btn-primary">ルーレット開始</button>
                 </div>
                 <!-- ルーレット完了後に表示されるボタン -->
