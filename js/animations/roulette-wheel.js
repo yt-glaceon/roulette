@@ -212,16 +212,14 @@ export class RouletteWheel {
              */
             calculateTargetAngle(selectedIndex, anglePerMember) {
                     // 針は上部（-π/2 = -90度 = 270度）に固定されている
-                    // drawメソッドでは、セクションiの開始角度 = rotation + anglePerMember * i
-                    // セクションiの中央角度 = rotation + anglePerMember * i + anglePerMember / 2
+                    // drawメソッドでは、セクションiの中央角度 = rotation + anglePerMember * i + anglePerMember / 2
 
-                    // 目標: 選出されたセクションの中央が針の位置（-π/2）に来るようにrotationを設定
-                    // rotation + anglePerMember * selectedIndex + anglePerMember / 2 = -π/2 (mod 2π)
-                    // rotation = -π/2 - anglePerMember * selectedIndex - anglePerMember / 2
+                    // 目標: 選出されたセクションの中央が針の位置（270度）に来るようにrotationを設定
+                    // rotation + anglePerMember * selectedIndex + anglePerMember / 2 = 270度 (mod 360度)
+                    // rotation = 270度 - anglePerMember * selectedIndex - anglePerMember / 2
 
-                    // しかし、負の角度になるので、2πを足して正規化する必要がある
                     const sectionCenter = anglePerMember / 2;
-                    const pointerAngle = -Math.PI / 2;
+                    const pointerAngle = 270 * Math.PI / 180; // 270度をラジアンに変換
 
                     let targetAngle = pointerAngle - (anglePerMember * selectedIndex) - sectionCenter;
 
@@ -236,6 +234,8 @@ export class RouletteWheel {
                     const randomOffset = (Math.random() - 0.5) * maxOffset * 0.5;
 
                     targetAngle += randomOffset;
+
+                    console.log(`[calculateTargetAngle] selectedIndex=${selectedIndex}, pointerAngle=${(pointerAngle * 180 / Math.PI).toFixed(2)}度, targetAngle=${(targetAngle * 180 / Math.PI).toFixed(2)}度`);
 
                     return targetAngle;
                 }
