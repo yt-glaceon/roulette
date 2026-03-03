@@ -37,8 +37,9 @@
 1. WHEN ルーレット画面が表示されたとき、THE UIController SHALL 各メンバーの横に除外チェックボックスを表示する
 2. WHEN ユーザーがメンバーを除外指定したとき、THE System SHALL そのメンバーを選出対象から除外する
 3. WHEN 除外指定されたメンバーがいるとき、THE RouletteWheel SHALL 除外されたメンバーをルーレットに表示しない
-4. WHEN すべてのメンバーが除外されたとき、THE System SHALL エラーメッセージを表示してルーレット開始を防止する
-5. WHEN 除外リストが変更されたとき、THE System SHALL 選出可能人数の上限を更新する
+4. WHEN ルーレットアニメーションが実行されるとき、THE RouletteWheel SHALL 除外者を除く全メンバーを円グラフに表示し、針が選出されたメンバーを順に指すようにする
+5. WHEN すべてのメンバーが除外されたとき、THE System SHALL エラーメッセージを表示してルーレット開始を防止する
+6. WHEN 除外リストが変更されたとき、THE System SHALL 選出可能人数の上限を更新する
 
 ### 要件 3: ランダムロール付与機能
 
@@ -48,13 +49,14 @@
 
 1. WHEN ルーレット画面が表示されたとき、THE UIController SHALL 選出人数に応じたロール入力フィールドを表示する
 2. WHEN 選出人数が変更されたとき、THE UIController SHALL 入力フィールドの数を選出人数に合わせて動的に増減する
-3. WHEN 選出人数が減少したとき、THE UIController SHALL 非表示になった入力フィールドの内容をリセットする
-4. WHEN ユーザーがロールを入力したとき、THE System SHALL 各入力フィールドに1つのロールを受け付ける
-5. WHEN ルーレットが実行されたとき、THE System SHALL 入力されたロールリストをシャッフルして各当選者に1つずつ割り当てる
-6. WHEN ロールが入力されていないとき、THE System SHALL ロールなしで通常通りルーレットを実行する
-7. WHEN 一部のロールのみ入力されているとき、THE System SHALL 入力されたロールのみをシャッフルして割り当て、空欄の当選者にはロールを割り当てない
-8. WHEN 結果が表示されたとき、THE UIController SHALL 各当選者の名前と共に割り当てられたロールを表示する
-9. WHEN 結果をコピーしたとき、THE System SHALL 当選者名とロールを含むテキストをクリップボードにコピーする
+3. WHEN 選出人数が減少したとき、THE UIController SHALL 削除されたフィールドを即座に削除する
+4. WHEN アニメーション画面が表示されたとき、THE UIController SHALL ロール入力フィールドを非表示にする
+5. WHEN ユーザーがロールを入力したとき、THE System SHALL 各入力フィールドに1つのロールを受け付ける
+6. WHEN ルーレットが実行されたとき、THE System SHALL 入力されたロールリストをシャッフルして各当選者に1つずつ割り当てる
+7. WHEN ロールが入力されていないとき、THE System SHALL ロールなしで通常通りルーレットを実行する
+8. WHEN 一部のロールのみ入力されているとき、THE System SHALL 入力されたロールのみをシャッフルして割り当て、空欄の当選者にはロールを割り当てない
+9. WHEN 結果が表示されたとき、THE UIController SHALL 各当選者の名前と共に割り当てられたロールを表示する
+10. WHEN 結果をコピーしたとき、THE System SHALL 当選者名とロールを含むテキストをクリップボードにコピーする
 
 ### 要件 4: 白線回避アニメーション
 
