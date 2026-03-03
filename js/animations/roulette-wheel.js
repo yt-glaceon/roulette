@@ -150,7 +150,7 @@ export class RouletteWheel {
         const targetAngle = this.calculateTargetAngle(selectedIndex, anglePerMember);
         
         // 最低回転数を保証（minRotations 以上）
-        const extraRotations = minRotations + Math.random() * 2;
+        const extraRotations = minRotations + Math.floor(Math.random() * 3); // 0, 1, 2 のいずれかを加算
         // rotation が常に0なので、計算式を簡素化
         this.targetRotation = (Math.PI * 2 * extraRotations) + targetAngle;
         
