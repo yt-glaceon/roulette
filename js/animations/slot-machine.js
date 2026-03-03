@@ -122,23 +122,18 @@ export class SlotMachineAnimation {
         // 各列を順番にアニメーション
         const columnDelay = 1000; // 列ごとの停止時間差
         
+        // すべての列を同時に開始
         for (let i = 0; i < this.columns.length; i++) {
             const column = this.columns[i];
             // 列が左から右へ順番に停止するように計算
             // 列0: 1 * columnDelay, 列1: 2 * columnDelay, 列2: 3 * columnDelay
             const columnDuration = (i + 1) * columnDelay;
             
-            // 列をアニメーション（非同期で開始）
+            // 列をアニメーション（すべて同時に開始）
             this.animateColumn(column, selectedMember, selectedIndex, columnDuration);
-            
-            // 次の列まで待機
-            if (i < this.columns.length - 1) {
-                await this.sleep(columnDelay);
-            }
         }
         
         // 最後の列が停止するまで待機
-        // 列2のcolumnDurationは3 * columnDelayなので、それに合わせる
         await this.sleep(this.columns.length * columnDelay);
         
         this.isSpinning = false;
@@ -157,11 +152,13 @@ export class SlotMachineAnimation {
             const membersCount = this.members.length;
 
             // 目標位置を計算（選出されたメンバーが中央に来るように）
-            // 表示領域の中央にアイテムを配置するため、1アイテム分上にずらす
+            // 表示領域には3アイテムが見える（上・中・下）
+            // 中央に表示するには、選出されたアイテムの1つ前のアイテムを上端に配置する
             const repeatIndex = 5; // 5回目の繰り返しで停止
-            const targetPosition = -(repeatIndex * membersCount + selectedIndex) * itemHeight - itemHeight;
+            const targetIndex = repeatIndex * membersCount + selectedIndex;
+            const targetPosition = -(targetIndex - 1) * itemHeight;
             
-            console.log(`[animateColumn] selectedIndex=${selectedIndex}, membersCount=${membersCount}, targetPosition=${targetPosition}px, duration=${duration}ms`);
+            console.log(`[animateColumn] selectedIndex=${selectedIndex}, targetIndex=${targetIndex}, targetPosition=${targetPosition}px, duration=${duration}ms`);
 
             // 初期位置をリセット（transitionなし）
             reel.style.transition = 'none';
