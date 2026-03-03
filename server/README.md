@@ -1,6 +1,13 @@
-# Discord Voice Roulette - Backend Server
+# Discord ボイスルーレット - バックエンドサーバー
 
-Discord Bot を使用してボイスチャネル情報を取得する REST API サーバー
+Discord Bot と REST API を提供するバックエンドサーバー
+
+## 機能
+
+- Discord Bot（スラッシュコマンド `/roulette`）
+- トークンベースのアクセス制御
+- REST API（ギルド情報、チャネル情報、メンバー情報）
+- CORS 設定
 
 ## セットアップ
 
@@ -13,8 +20,6 @@ npm install
 
 ### 2. 環境変数の設定
 
-`.env.example` を `.env` にコピーして、必要な値を設定:
-
 ```bash
 cp .env.example .env
 ```
@@ -22,29 +27,54 @@ cp .env.example .env
 `.env` ファイルを編集:
 
 ```env
-DISCORD_BOT_TOKEN=your_actual_bot_token_here
+# Discord Bot Token
+DISCORD_BOT_TOKEN=your_bot_token_here
+
+# サーバーポート
 PORT=3000
+
+# フロントエンドURL（CORS設定用）
 FRONTEND_URL=http://localhost:5500
 ```
 
 ### 3. サーバーの起動
 
-開発環境:
+**開発環境**:
+
 ```bash
 npm run dev
 ```
 
-本番環境:
+**本番環境**:
+
 ```bash
 npm start
 ```
 
+## 環境変数
+
+| 変数名 | 説明 | 例 |
+|--------|------|-----|
+| `DISCORD_BOT_TOKEN` | Discord Bot のトークン | `MTQ3Mzg2...` |
+| `PORT` | サーバーのポート番号 | `3000` |
+| `FRONTEND_URL` | フロントエンドのURL（CORS用） | `http://localhost:5500` |
+
+### 本番環境の設定
+
+**Render**:
+
+- `DISCORD_BOT_TOKEN`: Discord Developer Portal から取得
+- `PORT`: `3000`（Renderが自動設定）
+- `FRONTEND_URL`: `https://yt-glaceon.github.io/roulette`
+
 ## API エンドポイント
 
 ### `GET /`
+
 ヘルスチェック
 
 **レスポンス:**
+
 ```json
 {
   "status": "ok",
@@ -53,24 +83,39 @@ npm start
 }
 ```
 
-### `GET /api/guilds`
-Bot が参加しているギルド一覧を取得
+### `GET /api/validate-token?token=xxx`
+
+トークンを検証
 
 **レスポンス:**
+
 ```json
-[
-  {
-    "id": "123456789",
-    "name": "My Server",
-    "icon": "https://cdn.discordapp.com/..."
-  }
-]
+{
+  "valid": true,
+  "guildId": "123456789"
+}
 ```
 
-### `GET /api/guilds/:guildId/channels`
-特定ギルドのボイスチャネル一覧を取得
+### `GET /api/guild?token=xxx`
+
+ギルド情報を取得
 
 **レスポンス:**
+
+```json
+{
+  "id": "123456789",
+  "name": "My Server",
+  "icon": "https://cdn.discordapp.com/..."
+}
+```
+
+### `GET /api/guild/channels?token=xxx`
+
+ボイスチャネル一覧を取得
+
+**レスポンス:**
+
 ```json
 [
   {
@@ -81,10 +126,12 @@ Bot が参加しているギルド一覧を取得
 ]
 ```
 
-### `GET /api/guilds/:guildId/channels/:channelId/members`
-特定ボイスチャネルのメンバー一覧を取得
+### `GET /api/guild/channels/:channelId/members?token=xxx`
+
+ボイスチャネルメンバー一覧を取得
 
 **レスポンス:**
+
 ```json
 [
   {
@@ -96,19 +143,25 @@ Bot が参加しているギルド一覧を取得
 ]
 ```
 
-## Render へのデプロイ
+## Discord Bot
 
-### 1. GitHub にプッシュ
+### スラッシュコマンド
 
-```bash
-git add .
-git commit -m "Add backend server"
-git push
+`/roulette` - ボイスルーレットのURLを生成
+
+**生成されるURL**:
+
+```
+https://yt-glaceon.github.io/roulette?token=abc123...
 ```
 
-### 2. Render でサービスを作成
+トークンは1時間有効です。
 
-1. [Render Dashboard](https://dashboard.render.com/) にアクセス
+## デプロイ
+
+### Render へのデプロイ
+
+1. Render Dashboard にアクセス
 2. 「New +」→「Web Service」を選択
 3. GitHub リポジトリを接続
 4. 以下の設定を入力:
@@ -119,26 +172,22 @@ git push
    - **Start Command**: `npm start`
 5. 環境変数を設定:
    - `DISCORD_BOT_TOKEN`: Bot トークン
-   - `FRONTEND_URL`: GitHub Pages の URL
+   - `FRONTEND_URL`: `https://yt-glaceon.github.io/roulette`
 6. 「Create Web Service」をクリック
-
-### 3. デプロイ完了
-
-デプロイが完了すると、Render が URL を提供します（例: `https://your-app.onrender.com`）
-
-この URL をフロントエンドの設定で使用します。
 
 ## トラブルシューティング
 
 ### Bot がオンラインにならない
+
 - `DISCORD_BOT_TOKEN` が正しいか確認
 - Bot の Intents が有効になっているか確認（Developer Portal）
 
 ### CORS エラー
+
 - `FRONTEND_URL` が正しく設定されているか確認
 - フロントエンドの URL と完全に一致する必要があります
 
-### メンバーが取得できない
-- Bot がサーバーに招待されているか確認
-- Bot に必要な権限があるか確認
-- SERVER MEMBERS INTENT が有効になっているか確認
+### トークンが無効
+
+- トークンは1時間で失効します
+- Discord で `/roulette` コマンドを再実行して新しい URL を取得
