@@ -157,8 +157,9 @@ export class SlotMachineAnimation {
             const membersCount = this.members.length;
 
             // 目標位置を計算（選出されたメンバーが中央に来るように）
+            // 表示領域の中央にアイテムの中央を合わせるため、itemHeight / 2 を引く
             const repeatIndex = 5; // 5回目の繰り返しで停止
-            const targetPosition = -(repeatIndex * membersCount + selectedIndex) * itemHeight;
+            const targetPosition = -(repeatIndex * membersCount + selectedIndex) * itemHeight - itemHeight / 2;
             
             console.log(`[animateColumn] selectedIndex=${selectedIndex}, membersCount=${membersCount}, targetPosition=${targetPosition}px, duration=${duration}ms`);
 
