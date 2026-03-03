@@ -621,6 +621,24 @@ p {
     justify-content: center;
     align-items: center;
     padding: 40px 20px;
+    position: relative;
+}
+
+/* 中央行のハイライト */
+.slot-machine-wrapper::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: calc(100% - 40px);
+    height: 120px;
+    background: rgba(88, 101, 242, 0.15);
+    border: 3px solid var(--primary-color);
+    border-radius: var(--border-radius);
+    pointer-events: none;
+    z-index: 1;
+    box-shadow: 0 0 30px rgba(88, 101, 242, 0.4);
 }
 
 .slot-column {
@@ -629,6 +647,8 @@ p {
     border-radius: var(--border-radius);
     overflow: hidden;
     width: 200px;
+    position: relative;
+    z-index: 2;
 }
 
 .slot-reel-container {
@@ -683,6 +703,10 @@ p {
     .slot-machine-wrapper {
         flex-direction: column;
         gap: 15px;
+    }
+    
+    .slot-machine-wrapper::before {
+        width: calc(100% - 20px);
     }
     
     .slot-column {

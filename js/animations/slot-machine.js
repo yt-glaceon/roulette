@@ -50,10 +50,13 @@ export class SlotMachineAnimation {
         const reel = document.createElement('div');
         reel.className = 'slot-reel';
         
+        // 各列で異なる順序のメンバーリストを作成
+        const shuffledMembers = this.shuffleMembers(index);
+        
         // メンバーを複数回繰り返して表示（スクロール用）
         const repeatCount = 10;
         for (let i = 0; i < repeatCount; i++) {
-            this.members.forEach(member => {
+            shuffledMembers.forEach(member => {
                 const item = this.createSlotItem(member);
                 reel.appendChild(item);
             });
@@ -65,8 +68,31 @@ export class SlotMachineAnimation {
         return {
             element: columnElement,
             reel: reel,
-            container: reelContainer
+            container: reelContainer,
+            shuffledMembers: shuffledMembers // シャッフルされた順序を保存
         };
+    }
+
+    /**
+     * 各列用にメンバーをシャッフル
+     * @param {number} columnIndex - 列のインデックス
+     * @returns {Array} シャッフルされたメンバーリスト
+     */
+    shuffleMembers(columnIndex) {
+        const shuffled = [...this.members];
+        
+        // 列ごとに異なるシード値を使ってシャッフル
+        // Fisher-Yatesアルゴリズムを使用
+        const seed = columnIndex + 1;
+        let random = seed * 9301 + 49297; // 簡易的な疑似乱数生成
+        
+        for (let i = shuffled.length - 1; i > 0; i--) {
+            random = (random * 9301 + 49297) % 233280;
+            const j = Math.floor((random / 233280) * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        
+        return shuffled;
     }
 
     /**
@@ -143,16 +169,26 @@ export class SlotMachineAnimation {
      * @param {number} selectedIndex - 選出されたメンバーのインデックス
      * @param {number} duration - アニメーション時間
      */
+    /**
+     * 列をアニメーション
+     * @param {Object} column - 列オブジェクト
+     * @param {Object} selectedMember - 選出されたメンバー
+     * @param {number} selectedIndex - 選出されたメンバーのインデックス（元のリスト）
+     * @param {number} duration - アニメーション時間
+     */
     animateColumn(column, selectedMember, selectedIndex, duration) {
             const reel = column.reel;
             const itemHeight = 120; // スロットアイテムの高さ
             const membersCount = this.members.length;
 
+            // シャッフルされたリストでの選出メンバーのインデックスを取得
+            const shuffledIndex = column.shuffledMembers.findIndex(m => m.id === selectedMember.id);
+
             // 目標位置を計算（選出されたメンバーが中央に来るように）
             // 表示領域には3アイテムが見える（上・中・下）
             // 中央に表示するには、選出されたアイテムの1つ前のアイテムを上端に配置する
             const repeatIndex = 5; // 5回目の繰り返しで停止
-            const targetIndex = repeatIndex * membersCount + selectedIndex;
+            const targetIndex = repeatIndex * membersCount + shuffledIndex;
             const targetPosition = -(targetIndex - 1) * itemHeight;
 
             // 初期位置をリセット（transitionなし）
