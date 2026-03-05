@@ -186,6 +186,15 @@ p {
     text-align: left;
 }
 
+.channel-member-count {
+    font-size: 0.9rem;
+    color: #888;
+    margin-top: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
 /* メンバーグリッド */
 .member-grid {
     display: grid;

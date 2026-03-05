@@ -155,7 +155,13 @@ export class UIController {
         const name = document.createElement('h3');
         name.textContent = channel.name;
         
+        // メンバー数表示を追加
+        const memberCount = document.createElement('div');
+        memberCount.className = 'channel-member-count';
+        memberCount.textContent = `👤 ${channel.memberCount ?? 0}人`;
+        
         content.appendChild(name);
+        content.appendChild(memberCount);
         card.appendChild(icon);
         card.appendChild(content);
 

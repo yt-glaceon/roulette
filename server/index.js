@@ -217,6 +217,7 @@ app.get('/api/guild/channels', validateToken, async (req, res) => {
         id: channel.id,
         name: channel.name,
         position: channel.position,
+        memberCount: channel.members.size,
       }))
       .sort((a, b) => a.position - b.position);
 
