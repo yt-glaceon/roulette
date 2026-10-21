@@ -70,6 +70,7 @@ Node.js v24.13.1
 
 (a) 実 `.env` でのローカル起動確認(マージ前、人間が実施)
 
+- [ ] 前提: ワークツリーの `server/node_modules` が `npm ci --prefix server` 済みで express が 4.22.3 であること(再テストで実施済み。別環境で行う場合は再度 `npm ci`)
 - [ ] Render のサービスを Suspend する(本番 Bot との二重起動回避。できない場合は二重起動を許容しローカル API の直接確認に限る)
 - [ ] ワークツリーの `server/` で Node 24 を使い `npm start`
 - [ ] ログに「Bot logged in as ...」「スラッシュコマンドの登録完了」「Server running on port ...」が出る
@@ -87,13 +88,41 @@ Node.js v24.13.1
 - [ ] 5. デプロイ後に Bot が再接続しログインし、`GET /` が `status: ok` を返す(コールドスタートを考慮)
 - [ ] 6. 実測結果を調査ドキュメントの未解決事項 2・3 と `render-node-version` エントリに追記
 
+## 再テスト(ステップ9 後)
+
+対象: コミット 508c688(express を 4.22.3 に更新、server/package-lock.json のみ)。HEAD は a3eafb6。実行 Node は v24.13.1。
+
+| 内容 | 結果 |
+| --- | --- |
+| `npm ci --prefix server`: 96 パッケージ追加、EBADENGINE などの警告なし、0 vulnerabilities | pass |
+| `server/node_modules/express/package.json` の version が 4.22.3(qs は 6.16.1) | pass |
+| server の `npm audit`: found 0 vulnerabilities(前回残っていた qs の moderate が解消) | pass |
+| トークン無し起動(前回と同じ手順、npm ci 後に実施): TokenInvalid で終了、ERR_MODULE_NOT_FOUND は 0 件 | pass |
+| ルート `npm test`(参考の再実行): 12 スイート / 145 テスト PASS | pass |
+| 作業ツリーに未コミットの変更なし | pass |
+
+トークン無し起動の証跡(cwd は `.env` の無いスクラッチディレクトリ、`ls -a` で `.` と `..` のみ、`DISCORD_BOT_TOKEN= timeout 30 node <ワークツリー>/server/index.js`)。スタックトレースは省略。ログ全文は `...\scratchpad\node24-start-step9.log`:
+
+```
+🚀 Server running on port 3000
+...\server\node_modules\discord.js\src\client\Client.js:217
+    if (!token || typeof token !== 'string') throw new DiscordjsError(ErrorCodes.TokenInvalid);
+DiscordjsError [TokenInvalid]: An invalid token was provided.
+  code: 'TokenInvalid'
+Node.js v24.13.1
+```
+
+注記: 作業順の都合で、npm ci の前(更新前の node_modules)にも同じ起動を 1 回実行し、同じ結果だった。上記の証跡と判定は npm ci 後の再実行のもの。
+
+express 4.22.3 / qs 6.16.1 での実 API 応答(path-to-regexp、qs のクエリ解析、body-parser)は、実 .env が必要なため人間の確認待ち(上記 (a))のまま。
+
 ## コードレビューからの引き継ぎ
 
-未解決の MAJOR なし。MINOR 1 件(未実施): express@4.22.3 への lockfile 更新(`npm update express --package-lock-only`)で残る qs の moderate 指摘が消せる見込み。実行するかはユーザー判断。
+未解決の MAJOR なし。MINOR 1 件(express@4.22.3 への lockfile 更新)は、ゲート2の修正依頼でステップ9として実施済み(コミット 508c688)。結果は上記「再テスト(ステップ9 後)」を参照。
 
 ## 総合判定
 
-エージェントで確認できる範囲: 合格(設定内容、ルートの `npm ci` / `npm test` 145 件 / `npm run build`、server のトークン無し起動、いずれも Node v24.13.1 で問題なし。server の audit は critical / high 0 件、moderate 1 件 qs が残存)。
+エージェントで確認できる範囲: 合格(初回テストおよびステップ9後の再テストとも、Node v24.13.1 で問題なし)。ステップ9後は server の `npm audit` が 0 件(critical / high / moderate いずれも無し)になった。
 
 ただし、実 `.env` でのローカル起動確認とデプロイ後確認は「人間の確認待ち」であり、完全な合格判定はそれらの完了後。
 

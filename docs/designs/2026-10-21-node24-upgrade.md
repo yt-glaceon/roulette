@@ -166,6 +166,7 @@ DB変更・フロントエンドの構成変更はないため、`db-designer` /
 | --- | --- | --- |
 | 1 | PASS | MAJOR なし。MINOR 1件: express@4.22.3(qs ~6.16.0)が ^4.18.2 の範囲で公開済みで、残る qs の指摘は `npm update express --package-lock-only` で消せる見込み → 共有メモリ express-qs-pinned-audit を修正。実行するかはゲート2でユーザーに確認 |
 | 2 | - | ラウンド1が PASS のため実施せず |
+| 追加(ステップ9) | PASS | ゲート2の修正依頼で追加した express 4.22.3 更新(508c688)をレビュー。変化は express・qs・重複 qs の削除のみ、package.json 不変、resolved は registry.npmjs.org、`npm audit` 0 件。指摘なし |
 
 未解決のMAJORが残った場合: なし
 
