@@ -254,8 +254,8 @@ loop-basic の `process/verification.md`「静的解析・自動チェックの�
 
 | ラウンド | 判定 | 主な指摘 |
 | --- | --- | --- |
-| 1 | PASS / MAJOR |  |
-| 2(ラウンド1がMAJORの場合のみ) | PASS / MAJOR |  |
+| 1 | PASS | MAJOR なし。lint・test・build・モック混入チェックを worktree で実行して確認。MINOR 2 件(deploy.yml の build・deploy に timeout-minutes が無い〈既存どおり・対応任意〉、memory エントリ 3 件の related_topics 追記が対象ファイル一覧外〈妥当・対応不要〉) |
+| 2 | 実施せず | ラウンド1が PASS のため |
 
 未解決のMAJORが残った場合: (なければ「なし」。テストレポートにも引き継ぐこと)
 
