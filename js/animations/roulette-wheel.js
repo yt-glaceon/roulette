@@ -142,10 +142,14 @@ export class RouletteWheel {
         const duration = options.duration || 6000;
         const minRotations = options.minRotations || 5;
 
+        // 選出されたメンバーのインデックスを取得（いなければ回さずに例外）
+        const selectedIndex = this.members.findIndex(m => m.id === selectedMember?.id);
+        if (selectedIndex === -1) {
+            throw new Error('当選者がルーレットのメンバーに含まれていません');
+        }
+
         this.isSpinning = true;
 
-        // 選出されたメンバーのインデックスを取得
-        const selectedIndex = this.members.findIndex(m => m.id === selectedMember.id);
         const anglePerMember = (Math.PI * 2) / this.members.length;
 
         // 現在の回転角からの相対で目標角度を計算
@@ -159,6 +163,9 @@ export class RouletteWheel {
         return new Promise((resolve) => {
             this.resolveSpin = resolve;
             const animate = () => {
+                // destroy / stop 済みなら何もしない
+                if (!this.isSpinning) return;
+
                 const elapsed = Date.now() - startTime;
                 const progress = Math.min(elapsed / duration, 1);
 

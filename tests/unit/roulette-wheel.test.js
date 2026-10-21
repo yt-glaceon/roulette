@@ -262,8 +262,28 @@ describe('RouletteWheel', () => {
             expect(spyCancel).toHaveBeenCalled();
             await p; // destroy で Promise は resolve される
             expect(drawSpy).not.toHaveBeenCalled();
+
+            // キャンセルされず残った rAF コールバックを実行しても描画されない
+            const rafCallsBefore = spyRaf.mock.calls.length;
+            callbacks.forEach(cb => cb());
+            expect(drawSpy).not.toHaveBeenCalled();
+            expect(spyRaf.mock.calls.length).toBe(rafCallsBefore);
             spyRaf.mockRestore();
             spyCancel.mockRestore();
+        });
+    });
+
+    describe('spin(当選者不在)', () => {
+        test('当選者が members にいないと reject され、isSpinning は立たない', async () => {
+            const members = [
+                { id: 'a', displayName: 'A', avatar: null },
+                { id: 'b', displayName: 'B', avatar: null }
+            ];
+            wheel.initialize(members);
+            await expect(wheel.spin({ id: 'zzz', displayName: 'Z', avatar: null }, { duration: 20 }))
+                .rejects.toThrow();
+            expect(wheel.isSpinning).toBe(false);
+            expect(wheel.rotation).toBe(0);
         });
     });
 });
