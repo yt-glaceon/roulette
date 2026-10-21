@@ -4,7 +4,7 @@
   "baseBranch": "main",
   "stagingBranch": null,
   "protectedBranches": ["main"],
-  "deployNote": "main への push で deploy.yml が走り、pre-deploy-verify(lint・テスト・ビルド・モック混入チェック)に通った場合のみ GitHub Pages に本番デプロイされる。PR・main push では ci.yml の verify が走り、main は PR 必須かつ verify 必須(ブランチ保護)。server/ は自動デプロイされない",
+  "deployNote": "main への push で deploy.yml が走り、pre-deploy-verify(lint・テスト・ビルド・モック混入チェック)に通った場合のみ GitHub Pages に本番デプロイされる。PR・main push では ci.yml の verify が走り、main は PR 必須かつ verify 必須(ブランチ保護)。server/ を変えたコミットは Render(Root Directory: server)に自動デプロイされる(Webhook が遅れることがある)。server/ の外だけの変更では Render はデプロイされない",
   "verify": {
     "test": "npm test",
     "build": "npm run build",
