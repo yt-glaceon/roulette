@@ -58,7 +58,7 @@ https://your-app.github.io?token=abc123...
 
 ### 前提条件
 
-- Node.js（v18 以上）
+- Node.js（v24）
 - Discord Bot アカウント
 - GitHub アカウント
 - Render アカウント（無料）
@@ -124,6 +124,8 @@ npm run dev
    - `DISCORD_BOT_TOKEN`: Bot トークン
    - `FRONTEND_URL`: GitHub Pages の URL
 6. 「Create Web Service」をクリック
+
+Node バージョンの指定と確認は `server/README.md` を参照。
 
 ### 6. GitHub Pages へのデプロイ
 

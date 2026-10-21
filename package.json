@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "Discord ボイスチャネルメンバーをランダムに選出するルーレットアプリ",
   "type": "module",
+  "engines": {
+    "node": "24.x"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
