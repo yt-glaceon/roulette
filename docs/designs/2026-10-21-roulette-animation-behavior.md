@@ -169,7 +169,7 @@ CSS transition 1本の方式をやめ、`requestAnimationFrame` で各列の位�
 - [x] ステップ4: ドラムロール `drum-roll.js` を直す(減速スケジュール、切り替え回数 N' の調整、`currentIndex` の規則、タイマーの保持と `destroy`、`updateMembers`)。テスト: 新規 `tests/unit/drum-roll.test.js`
 - [x] ステップ5: カードめくり `card-flip.js` と `css/style.css` のカード部分を直す(2面カード、光の移動と減速、めくり、状態のリセット、`updateMembers`、`destroy`)。テスト: 新規 `tests/unit/card-flip.test.js`
 - [x] ステップ6: `ui-controller.js` の `spin` ループに `updateMembers` 呼び出しを入れる(通常ループとフォールバックの両方、id で filter)。テスト: `tests/unit/ui-controller.test.js` に追加。ステップ2〜5と並列で進めるため、テストではメソッドが無い場合に備えて `prototype.updateMembers` を `jest.fn()` で代入してから spy する(終了時に元へ戻す)
-- [ ] ステップ7: 既存2ファイルの検証が新しいテストに移っていることを確認して削除する。`npm test` と `npm run build` を通す。`docs/process/project-dev.md` の「構成」に `animation-timing.js` を追記する
+- [x] ステップ7: 既存2ファイルの検証が新しいテストに移っていることを確認して削除する。`npm test` と `npm run build` を通す。`docs/process/project-dev.md` の「構成」に `animation-timing.js` を追記する
 
 ## テスト戦略
 
