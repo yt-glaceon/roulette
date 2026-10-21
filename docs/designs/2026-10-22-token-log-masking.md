@@ -72,13 +72,23 @@ Render の Root Directory は `server` なので、`server/log-safe.js` は `ser
 
 ## 実装ステップ
 
-- [ ] ステップ1: `server/log-safe.js` を新規作成し、`maskToken`・`maskUrl`・`describeError` を実装する
-- [ ] ステップ2: `tests/unit/server-log-safe.test.js` を新規作成し、下記「テスト戦略」の単体テストを書く(ステップ1に依存)
-- [ ] ステップ3: `server/index.js` を上記のとおり変更する(ログの伏せ字・エラー要約・catch 内 reply の保護・`validateToken` のヘッダ限定)(ステップ1に依存。ステップ2とは独立)
-- [ ] ステップ4: `js/api-request.js` を新規作成し、`js/discord-client.js` の `request` をそれを使う形に変える(ステップ1〜3とは独立)
-- [ ] ステップ5: `tests/unit/api-request.test.js` を新規作成する(ステップ4に依存)
+- [x] ステップ1: `server/log-safe.js` を新規作成し、`maskToken`・`maskUrl`・`describeError` を実装する
+- [x] ステップ2: `tests/unit/server-log-safe.test.js` を新規作成し、下記「テスト戦略」の単体テストを書く(ステップ1に依存)
+- [x] ステップ3: `server/index.js` を上記のとおり変更する(ログの伏せ字・エラー要約・catch 内 reply の保護・`validateToken` のヘッダ限定)(ステップ1に依存。ステップ2とは独立)
+- [x] ステップ4: `js/api-request.js` を新規作成し、`js/discord-client.js` の `request` をそれを使う形に変える(ステップ1〜3とは独立)
+- [x] ステップ5: `tests/unit/api-request.test.js` を新規作成する(ステップ4に依存)
 
 並列化: ステップ1とステップ4は同時に着手できる。ステップ2・3はステップ1の後、ステップ5はステップ4の後。
+
+実装記録(すべて implementer に委譲し、コミットはメインエージェントが実施):
+
+| タスク | 結果 | 確認 |
+| --- | --- | --- |
+| T1 `server/log-safe.js` | 完了 | node で各関数を呼んで確認 |
+| T4 `js/api-request.js`・`js/discord-client.js` | 完了 | `npm test` 145件・`npm run build` 成功 |
+| T5 `tests/unit/api-request.test.js` | 完了 | 5件通過 |
+| T2 `tests/unit/server-log-safe.test.js` | 完了 | 21件通過(全体 13スイート 162件) |
+| T3 `server/index.js` | 完了 | 起動して curl 5ケースが期待どおり、全文を出す `console.*` が残っていないことを grep で確認 |
 
 ## テスト戦略
 
@@ -96,7 +106,7 @@ Render の Root Directory は `server` なので、`server/log-safe.js` は `ser
 
 - `npm test` が全件通る、`npm run build` が通る
 - サーバーの起動確認(下記)の中で `curl` を使い、`GET /api/validate-token?token=dummy` と、ヘッダ無しの `GET /api/validate-token` がどちらも 401 `アクセストークンが必要です` になること、`x-access-token: dummy` ヘッダ付きは 401 `無効なトークンです` になること(クエリを読まずヘッダを読んでいることの確認)。`Origin: http://localhost:5500` と `Access-Control-Request-Headers: content-type,x-access-token` を付けた `OPTIONS` が 204 で `Access-Control-Allow-Headers` に `x-access-token` を含むこと
-- `server/index.js` が構文・import エラーなく読み込める: [[worktree-server-env-live-token]] に従い、`.env` の無いディレクトリを cwd にし、`DISCORD_BOT_TOKEN` を空にして起動し、`Server running on port …` が出ることと `GET /` が応答することを確かめる(Bot ログインは失敗してよい)
+- `server/index.js` が構文・import エラーなく読み込める: [[worktree-server-env-live-token]] に従い、`.env` の無いディレクトリを cwd にし、`DISCORD_BOT_TOKEN=dummy.fake.token node --unhandled-rejections=warn <worktree>/server/index.js` で起動し(空にすると `client.login` が TokenInvalid で起動直後に落ちる。実装時に判明)、`Server running on port …` が出ることと `GET /` が応答することを確かめる(Bot ログインは失敗してよい)
 - 差分に、トークン全文を出す `console.*` が残っていないこと(`grep` で `${token}` 等を確認)
 - マージ前(人間、打鍵確認): 実 API に繋いだフロントでの確認は、本番 Bot と二重ログインしないよう Render 側で行うのが現実的なので、マージ前はワークツリーで `npm run dev` → `?mock` で画面が従来どおり動くことだけを確認する(モックは `DiscordClient` を通らないので、ヘッダ送信の確認にはならない)
 - リリース後(人間): Render のデプロイ一覧で Trigger が自動(コミット)か手動かを確認([[render-root-dir-autodeploy]] の未確認事項)。Render と GitHub Pages の両方のデプロイ完了後、Discord で `/roulette` を実行して URL を開き、チャネル一覧・メンバー取得・抽選まで動くこと、Render のログが `トークン生成: xxxxxx… (Guild: …)` の形になっていること

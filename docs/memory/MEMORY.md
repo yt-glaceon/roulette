@@ -24,7 +24,7 @@
 - [jest-esm-globals](entries/jest-esm-globals.md) — ESM 実行の Jest では jest がグローバルに無い。@jest/globals から import し、モックは prototype の spyOn で
 - [render-node-version](entries/render-node-version.md) — Render の Node 指定は NODE_VERSION > .node-version > .nvmrc > engines。変えたらデプロイログで実際の版を確かめる
 - [render-root-dir-autodeploy](entries/render-root-dir-autodeploy.md) — Render は Root Directory(server)の外だけの変更では自動デプロイしない。まず差分に server/ があるか見る
-- [worktree-server-env-live-token](entries/worktree-server-env-live-token.md) — ワークツリーの server/.env は本番トークン。server/ を cwd に起動すると本番 Bot と二重ログインする
+- [worktree-server-env-live-token](entries/worktree-server-env-live-token.md) — ワークツリーの server/.env は本番トークン。server/ を cwd に起動すると本番 Bot と二重ログインする。確認はダミートークン + --unhandled-rejections=warn で
 - [express-qs-pinned-audit](entries/express-qs-pinned-audit.md) — express@4.22.1 が qs 6.14.2 を固定し、audit fix 後も qs の moderate が 1 件残る。`npm update express --package-lock-only` で直る(確認前に npm ci)
 - [discordjs-error-leaks-request](entries/discordjs-error-leaks-request.md) — DiscordAPIError をそのまま console.error すると url(インタラクショントークン)と requestBody(返信本文)がログに出る
 
