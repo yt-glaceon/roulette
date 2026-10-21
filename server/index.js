@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder } from 'discord.js';
 import crypto from 'crypto';
+import { maskToken, describeError } from './log-safe.js';
 
 dotenv.config();
 
@@ -52,7 +53,7 @@ async function registerSlashCommands() {
     );
     console.log('✅ スラッシュコマンドの登録完了');
   } catch (error) {
-    console.error('スラッシュコマンドの登録エラー:', error);
+    console.error('スラッシュコマンドの登録エラー:', describeError(error));
   }
 }
 
@@ -94,13 +95,17 @@ client.on('interactionCreate', async (interaction) => {
         ephemeral: true,
       });
 
-      console.log(`[Roulette] トークン生成: ${token} (Guild: ${guildId}, User: ${interaction.user.tag})`);
+      console.log(`[Roulette] トークン生成: ${maskToken(token)} (Guild: ${guildId}, User: ${interaction.user.tag})`);
     } catch (error) {
-      console.error('スラッシュコマンド処理エラー:', error);
-      await interaction.reply({
-        content: 'エラーが発生しました。もう一度お試しください。',
-        ephemeral: true,
-      });
+      console.error('スラッシュコマンド処理エラー:', describeError(error));
+      try {
+        await interaction.reply({
+          content: 'エラーが発生しました。もう一度お試しください。',
+          ephemeral: true,
+        });
+      } catch (replyError) {
+        console.error('エラー応答の送信に失敗:', describeError(replyError));
+      }
     }
   }
 });
@@ -111,7 +116,7 @@ setInterval(() => {
   for (const [token, data] of accessTokens.entries()) {
     if (data.expiresAt < now) {
       accessTokens.delete(token);
-      console.log(`[Roulette] 期限切れトークンを削除: ${token}`);
+      console.log(`[Roulette] 期限切れトークンを削除: ${maskToken(token)}`);
     }
   }
 }, 60000); // 1分ごと
@@ -141,7 +146,7 @@ app.use(express.json());
  * トークンを検証するミドルウェア
  */
 function validateToken(req, res, next) {
-  const token = req.query.token || req.headers['x-access-token'];
+  const token = req.headers['x-access-token'];
 
   if (!token) {
     return res.status(401).json({ error: 'アクセストークンが必要です' });
@@ -196,7 +201,7 @@ app.get('/api/guild', validateToken, async (req, res) => {
       icon: guild.iconURL(),
     });
   } catch (error) {
-    console.error('Error fetching guild:', error);
+    console.error('Error fetching guild:', describeError(error));
     res.status(500).json({ error: 'Failed to fetch guild' });
   }
 });
@@ -223,7 +228,7 @@ app.get('/api/guild/channels', validateToken, async (req, res) => {
 
     res.json(voiceChannels);
   } catch (error) {
-    console.error('Error fetching channels:', error);
+    console.error('Error fetching channels:', describeError(error));
     res.status(500).json({ error: 'Failed to fetch channels' });
   }
 });
@@ -258,7 +263,7 @@ app.get('/api/guild/channels/:channelId/members', validateToken, async (req, res
 
     res.json(members);
   } catch (error) {
-    console.error('Error fetching members:', error);
+    console.error('Error fetching members:', describeError(error));
     res.status(500).json({ error: 'Failed to fetch members' });
   }
 });
