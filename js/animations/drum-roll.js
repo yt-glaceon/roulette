@@ -57,8 +57,9 @@ export class DrumRollAnimation {
     /**
      * メンバーを表示
      * @param {Object} member - メンバー情報
+     * @param {boolean} emphasize - true なら rAF 内で scale(1.1) に拡大する(確定後の強調用)
      */
-    showMember(member) {
+    showMember(member, emphasize = false) {
         if (!this.displayElement || !member) return;
 
         this.displayElement.innerHTML = '';
@@ -90,7 +91,7 @@ export class DrumRollAnimation {
             if (!this.displayElement) return;
             this.displayElement.style.transition = 'all 0.2s ease-out';
             this.displayElement.style.opacity = '1';
-            this.displayElement.style.transform = 'scale(1)';
+            this.displayElement.style.transform = emphasize ? 'scale(1.1)' : 'scale(1)';
         });
     }
 
@@ -150,11 +151,13 @@ export class DrumRollAnimation {
         if (this.members.length === 0) return;
 
         const duration = options.duration || 6000;
-        this.isSpinning = true;
 
         let winnerIndex = this.members.findIndex((m) => m.id === selectedMember.id);
         if (winnerIndex < 0) winnerIndex = this.members.indexOf(selectedMember);
-        if (winnerIndex < 0) winnerIndex = 0;
+        if (winnerIndex < 0) {
+            throw new Error('当選者がメンバーに含まれていません');
+        }
+        this.isSpinning = true;
 
         // 開始時に表示中の人を表示し直してから切り替えを始める
         this.currentIndex = Math.min(this.currentIndex, this.members.length - 1);
@@ -173,9 +176,10 @@ export class DrumRollAnimation {
 
             const step = (k) => {
                 this.currentIndex = (this.currentIndex + 1) % this.members.length;
-                this.showMember(this.members[this.currentIndex]);
+                const isLast = k >= schedule.length - 1;
+                this.showMember(this.members[this.currentIndex], isLast);
 
-                if (k < schedule.length - 1) {
+                if (!isLast) {
                     const delay = Math.max(0, schedule[k + 1] - (Date.now() - startTime));
                     this.setTimer(() => step(k + 1), delay);
                     return;
@@ -187,8 +191,6 @@ export class DrumRollAnimation {
                     finish();
                     return;
                 }
-                this.displayElement.style.transition = 'all 0.2s ease-out';
-                this.displayElement.style.transform = 'scale(1.1)';
                 this.setTimer(() => {
                     if (this.displayElement) {
                         this.displayElement.style.transform = 'scale(1)';

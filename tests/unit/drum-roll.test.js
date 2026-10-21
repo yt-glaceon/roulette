@@ -157,6 +157,34 @@ describe('DrumRollAnimation', () => {
         expect(displayedName(container)).toBe('Member1');
     });
 
+    test('確定後の強調: 最後の切り替えの rAF 後に scale(1.1) になり、その後 scale(1) に戻る', async () => {
+        jest.useFakeTimers();
+        const members = makeMembers(3);
+        drum.initialize(members);
+        const display = container.querySelector('.drum-roll-display');
+        const transforms = [];
+        const promise = drum.spin(members[1], { duration: 1000 });
+        let done = false;
+        promise.then(() => { done = true; });
+        for (let t = 0; t < 1600; t += 10) {
+            await jest.advanceTimersByTimeAsync(10);
+            transforms.push(display.style.transform);
+        }
+        await promise;
+        expect(transforms).toContain('scale(1.1)');
+        expect(display.style.transform).toBe('scale(1)');
+        expect(done).toBe(true);
+    });
+
+    test('当選者が members にいないと reject され、isSpinning は立たない', async () => {
+        const members = makeMembers(3);
+        drum.initialize(members);
+        await expect(
+            drum.spin({ id: 'nobody', displayName: 'X', avatar: null }, { duration: 500 })
+        ).rejects.toThrow();
+        expect(drum.isSpinning).toBe(false);
+    });
+
     test('destroy 後にタイマーが走らず、待っている spin は resolve する', async () => {
         jest.useFakeTimers();
         const members = makeMembers(5);
