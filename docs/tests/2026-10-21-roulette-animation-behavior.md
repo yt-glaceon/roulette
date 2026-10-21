@@ -1,7 +1,7 @@
 # テストレポート: ルーレット各方式のアニメーションを一般的な挙動に寄せる
 
 - 日付: 2026-10-21
-- ステータス: 修正依頼
+- ステータス: 再テスト(2回目)完了
 - 対応する設計ドキュメント: [docs/designs/2026-10-21-roulette-animation-behavior.md](../designs/2026-10-21-roulette-animation-behavior.md)
 
 ## テスト対象
@@ -119,6 +119,107 @@ Playwright 1.48.2(Microsoft Edge、`channel: 'msedge'`)で `http://localhost:550
 不合格
 
 理由: 円形・スロット・ドラムロールは合格基準(止まって見えた人 = 結果画面の人、設計の動きの形)を満たした。カードめくりは、結果は正しいが、光が当選カードで止まって見えず(不具合1)、長い名前のカードがはみ出す(不具合2)。不具合1は設計の合格基準「止まって見えた人と結果画面の人が一致する」に反するため、不合格とする。`implementer` による修正のあと、カードめくりの再確認が必要。
+
+## 再テスト(2回目)
+
+- 日付: 2026-10-21
+- 対象: 修正コミット d910a2d(`js/animations/card-flip.js`・`css/style.css`・`tests/unit/card-flip.test.js`)。光を duration で当選カードに移して止め、約400ms 後に当選カードをめくる。カードの表裏を grid で同じセルに重ね、高さを内容に合わせて伸ばす。
+- 前回の結果(上の各節・総合判定)は初回テストの記録として残す。今回の判定は末尾の「総合判定(再テスト 2回目)」。
+
+### 実施したテスト
+
+| 種別 | 内容 | 結果 |
+| --- | --- | --- |
+| 自動テスト | `npm test`: 12 スイート・145 件(前回 144 件、修正で 1 件追加) | pass |
+| ビルド | `npm run build` | pass |
+| ビルド検査 | `grep -rlE '【モック】|mock-badge' dist --include='*.js' --include='*.html'` が 0 件。`dist/assets` は `index-*.js`・`.map`・`.css` のみ | pass |
+| 型チェック/Lint | 未構成 | 対象外 |
+| 手動確認: カードめくり 不具合1(8人・8人から3人・30人から2人・1人・375px・長い名前2構成) | 最後に見えた光のカード = 当選カード。全 spin で一致 | pass |
+| 手動確認: カードめくり 不具合2(長い名前、デスクトップ・375px) | はみ出し無し、アバター正円、めくり後に裏面は見えない | pass |
+| 手動確認: 止まった人 = 結果画面の人(カード全構成) | 全 spin で一致 | pass |
+| 手動確認: 回帰(円形・スロット・ドラム 各 通常8人 1選出) | 止まった人 = 結果画面の人。前回と同じ挙動 | pass |
+
+### 証跡(再テスト)
+
+前回と同じ方法(Playwright 1.48.2・Edge・`?mock`・各クラスの `prototype.spin` ラップと毎フレームのクラス記録)。duration 3000ms。スクリプトと生データはスクラッチパッド(`run2.js`・`an2.js`・`full2.js`、`results2/`)でリポジトリには含めない。スクリーンショットは `retest-` で始まる jpg(`<方式>-<構成>-mid|stop|end|result`)。
+
+#### 不具合1: 光が当選カードで止まる
+
+card-normal8 の時系列(勝者はインデックス4。H = 光、F = めくれた、S = 当選、U = 残り):
+
+```
+63ms 光=4 / 130ms 光=5 / 205ms 光=2 / 292ms 光=4 / 392ms 光=3 / 513ms 光=6 / 655ms 光=7 / 822ms 光=2 /
+1022ms 光=1 / 1252ms 光=0 / 1514ms 光=5 / 1819ms 光=1 / 2170ms 光=5 / 2561ms 光=0 /
+3004ms 光=4(当選カード。直前までの光=0 は消える) / 3404ms カード4がめくれる(FS) / 3704ms 残りがめくれる(FU) / resolve 4102ms
+```
+
+全構成の「最後の光のカード = 当選カード」(複数枚の spin。1人は下に別記):
+
+| 構成 | spin | 最後の光 | 当選 | 最後の光の時刻 | 当選めくり | 残りめくり | resolve |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 通常8人 1選出 | 1 | idx4 | idx4 | 3004 | 3404 | 3704 | 4102 |
+| 通常8人 3選出 | 1 | idx7 | idx7 | 3004 | 3404 | 3704 | 4102 |
+| 通常8人 3選出 | 2(7枚) | idx3 | idx3 | 3004 | 3404 | 3705 | 4101 |
+| 通常8人 3選出 | 3(6枚) | idx0 | idx0 | 3003 | 3403 | 3703 | 4100 |
+| 大人数30人 2選出 | 1 | idx14 | idx14 | 3003 | 3403 | 3703 | 4101 |
+| 大人数30人 2選出 | 2(29枚) | idx5 | idx5 | 3004 | 3404 | 3705 | 4100 |
+| 375px 通常8人 2選出 | 1 | idx6 | idx6 | 3004 | 3404 | 3704 | 4101 |
+| 375px 通常8人 2選出 | 2(7枚) | idx3 | idx3 | 3003 | 3402 | 3702 | 4100 |
+| 長い名前 2選出 | 1(6枚) | idx0 | idx0 | 3004 | 3404 | 3704 | 4101 |
+| 長い名前 2選出 | 2(5枚) | idx2 | idx2 | 3002 | 3402 | 3702 | 4101 |
+| 長い名前 375px | 1(6枚) | idx0 | idx0 | 3004 | 3404 | 3704 | 4102 |
+
+- 複数枚の 11 spin 中 11 回で一致(前回は 0 回一致)。直前の光は別のカード(最終から 2 番目が当選と同じになることは無し)。
+- 光の最後の移動 = duration + 2〜4ms、当選めくり = duration + 約 400ms、残りのめくり = 当選めくり + 約 300ms、resolve = duration + 約 1100ms(設計のコメントどおり)。
+- 光の移動回数は 15 回(前回 14 回 + 当選カードへの最後の移動)。同じカードが連続で光ることは無し。2回目以降も全カード裏向きの初期状態から始まる。
+- 1人(card-single1): 光は 63ms にそのカードに付いたまま、3404ms にめくれる(`FS`)。確定後の見え方は他と同じ。
+- 最終状態は当選カードのみ `S`、他は `U`。`selected` の名前 = 結果画面の名前。
+
+#### 不具合2: 長い名前のカード(1000px・375px)
+
+DOM の実測(めくり完了後、`.card-flip-front` の `scrollHeight`・`clientHeight`。画像は [retest-full-card-edge-desktop.jpg](assets/2026-10-21-roulette-animation-behavior/retest-full-card-edge-desktop.jpg)、[retest-full-card-edge-mobile375.jpg](assets/2026-10-21-roulette-animation-behavior/retest-full-card-edge-mobile375.jpg)、[retest-full-card-edge-desktop-x3.jpg](assets/2026-10-21-roulette-animation-behavior/retest-full-card-edge-desktop-x3.jpg)):
+
+| 構成 | カードの高さ | 表面の scrollHeight / clientHeight(最大) | 横方向のはみ出し | アバター(幅×高さ。拡縮込み) | 裏面が見える枚数 |
+| --- | --- | --- | --- | --- | --- |
+| 長い名前 1000px・1選出 | 275〜318px | 285 / 285 | 無し | 76×76、88×88 | 0 / 6 |
+| 長い名前 1000px・3選出(最後の 4 枚) | 275〜318px | 285 / 285 | 無し | 76×76、88×88 | 0 / 4 |
+| 長い名前 375px・1選出 | 227〜263px | 235 / 235 | 無し | 57×57、66×66 | 0 / 6 |
+| 通常8人 1000px(参考) | 143〜166px | 147 / 147 | 無し | 76×76、88×88 | 0 / 8 |
+| 通常8人 375px(参考) | 124〜143px | 126 / 126 | 無し | 57×57、66×66 | 0 / 8 |
+
+- 全カードで `scrollHeight ≤ clientHeight`(前回は 185 > 146)。カードの高さが内容に合わせて伸びる(前回は 150px / 130px に固定)。
+- アバターは全カードで幅 = 高さ(正円)。76 や 88 は選出済み・当選カードの scale(0.95・1.1)込みの値で、アバター本来の 80×80 に対応する。
+- 裏面: めくり後の各カード中心の `elementFromPoint` が裏面(`.card-flip-back`)に当たった枚数は 0。1000px では全カードの最上面が表面。375px では画面外(下)にあるカードは `elementFromPoint` が取れないので、取れた 3 枚はすべて表面で、残りは裏面でないことまで(取れない分は裏面判定が 0 のため)。
+- スクリーンショットでも、長い名前・絵文字・記号・英数字 64 文字のカードで内容が枠に収まり、当選カード(緑)の高さも揃っている([retest-full-card-edge-desktop.jpg](assets/2026-10-21-roulette-animation-behavior/retest-full-card-edge-desktop.jpg))。
+
+#### 止まった人 = 結果画面の人
+
+- カード 全 7 構成(通常8人、8人から3人、30人から2人、1人、375px、長い名前 2 構成)で、`selected` のカードの名前 = 結果画面の名前(一致 true)。
+- 回帰の 3 方式も一致: 円形はポインタの指す人 = ひなた = 結果、スロットは 3 列の中央行 = れん = 結果、ドラムは最後に表示された人 = あおい = 結果(直前は別人)。
+
+#### 他の3方式の回帰確認(通常8人 1選出)
+
+- 円形: 回転量 7.90 周、停止は区画の 0.82。前回の範囲内(区画内ランダム停止)。画像: [retest-wheel-normal8-mid.jpg](assets/2026-10-21-roulette-animation-behavior/retest-wheel-normal8-mid.jpg)、[retest-wheel-normal8-end.jpg](assets/2026-10-21-roulette-animation-behavior/retest-wheel-normal8-end.jpg)
+- スロット: 停止 1795 / 2383 / 2984ms(0.60 / 0.79 / 0.99)。逆走 0 フレーム。右列の速度は終了 500ms 前 2.9 → 200ms 前 0.5 → 50ms 前 0.0 アイテム/秒。前回と同じ。画像: [retest-slot-normal8-mid.jpg](assets/2026-10-21-roulette-animation-behavior/retest-slot-normal8-mid.jpg)、[retest-slot-normal8-stop.jpg](assets/2026-10-21-roulette-animation-behavior/retest-slot-normal8-stop.jpg)
+- ドラム: 最後の切り替え 3002ms、最後の間隔 228 → 248 → 267 → 288ms。最後の 4 回は そうた → ひなた → れん → あおい。前回と同じ。画像: [retest-drum-normal8-stop.jpg](assets/2026-10-21-roulette-animation-behavior/retest-drum-normal8-stop.jpg)
+- コンソールエラーは favicon の 404 が円形の 1 件のみ(今回の変更と無関係。前回と同じ)。
+
+#### 画像一覧(カード)
+
+[retest-card-normal8-mid.jpg](assets/2026-10-21-roulette-animation-behavior/retest-card-normal8-mid.jpg)(光の移動中)、[retest-card-normal8-stop.jpg](assets/2026-10-21-roulette-animation-behavior/retest-card-normal8-stop.jpg)(確定直後。当選カードがめくれている)、[retest-card-normal8x3-end.jpg](assets/2026-10-21-roulette-animation-behavior/retest-card-normal8x3-end.jpg)、[retest-card-large30-end.jpg](assets/2026-10-21-roulette-animation-behavior/retest-card-large30-end.jpg)、[retest-card-single1-end.jpg](assets/2026-10-21-roulette-animation-behavior/retest-card-single1-end.jpg)、[retest-card-mobile375-end.jpg](assets/2026-10-21-roulette-animation-behavior/retest-card-mobile375-end.jpg)、[retest-card-edge-end.jpg](assets/2026-10-21-roulette-animation-behavior/retest-card-edge-end.jpg)、[retest-card-edge-mobile375-end.jpg](assets/2026-10-21-roulette-animation-behavior/retest-card-edge-mobile375-end.jpg)、[retest-full-card-normal8-desktop.jpg](assets/2026-10-21-roulette-animation-behavior/retest-full-card-normal8-desktop.jpg)、[retest-full-card-normal8-mobile375.jpg](assets/2026-10-21-roulette-animation-behavior/retest-full-card-normal8-mobile375.jpg)。結果画面は `retest-card-*-result.jpg`。
+
+### 未検証の観点・既知の制限事項(再テスト)
+
+- 「光が当選カードに付いて約 400ms 止まって見えるか」は数値(クラスの付与時刻)で確認した。人間の目での見え方(400ms が十分に止まって見えるか、めくりの 3D の見え方)はゲートで確認する。
+- 375px 幅のカードめくりの横スクロール(`scrollWidth` 664px)は前回と同じ値で、main でも同じ(今回の変更による退行ではない)。1000px でも `scrollWidth` が 1010px になるのは、当選カードの scale(1.1)によるものと見られるが、main との比較はしていない。
+- 他の観点(円形・スロット・ドラムの詳細、30人のスロットの物足りなさ、実 API での確認)は前回の記載のとおり。今回の回帰確認は 3 方式とも 1 構成のみ。
+- 時間の計測は headless の Edge の rAF/タイマー。実機の負荷で ±数十 ms ずれる可能性がある。
+
+### 総合判定(再テスト 2回目)
+
+合格
+
+理由: 前回不合格の原因だった 2 件がどちらも解消した。不具合1: 複数枚のカードがある 11 spin すべてで、最後に見えた光のカード = 当選カード(前回は 0/11)。光は duration 直後に当選カードに付き、約 400ms 後にめくれ、約 300ms 後に残りがめくれる。不具合2: 長い名前のカードは 1000px・375px のどちらでも内容が枠に収まり、アバターは正円で、めくり後に裏面は見えない。止まった人 = 結果画面の人は全構成で一致し、他の 3 方式に回帰は無い。`npm test`(145 件)・`npm run build`・本番ビルドにモックが含まれないことの確認はすべて通った。
 
 ## 人間確認ゲート記録
 
