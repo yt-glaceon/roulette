@@ -65,11 +65,11 @@ DB変更・フロントエンドの構成変更はないため、`db-designer` /
 
 並列にできる単位(ファイルが重ならない)に分ける。ステップ1〜4は互いに独立で並列実行可。ステップ5はステップ1の完了・コミット後に実行する(同じファイルを触るため)。ステップ6以降は全ステップ完了後。
 
-- [ ] ステップ1(担当A: server 系): `server/package.json` に `engines.node = "24.x"` を追加し、`server/` で `npm install --package-lock-only` を実行して `server/package-lock.json` を同期する。`git diff` で lockfile の差分が `packages[""]` の `engines` 追記のみであることを確認する(大きな差分が出たら中止して報告)。触るファイル: `server/package.json`, `server/package-lock.json`。
-- [ ] ステップ2(担当B: ルート系): ルート `package.json` に `engines.node = "24.x"` を追加し、ルートで `npm install --package-lock-only` を実行して `package-lock.json` を同期する。差分が `packages[""]` の `engines` 追記のみであることを確認する。触るファイル: `package.json`, `package-lock.json`。
-- [ ] ステップ3(担当C: CI): `.github/workflows/deploy.yml` の `node-version` を `'24'` に変更し、`check-latest: true` を追加する。他の行(アクションのバージョンなど)は変更しない。触るファイル: `.github/workflows/deploy.yml` のみ。
-- [ ] ステップ4(担当D: ドキュメント): `README.md` / `SETUP.md` の Node バージョン記述を「v24」に更新し、`server/README.md` の Render 手順に上記3点の注記を追記する。`.kiro/specs/` は更新しない。触るファイル: `README.md`, `SETUP.md`, `server/README.md` のみ。
-- [ ] ステップ5(ステップ1のコミット後): `server/` で `npm audit fix`(`--force` なし)を実行する。変更が `server/package-lock.json` のみで、`server/package.json` に差分が出ないことを確認する。実行後 `npm audit` を取り、残る指摘を記録する。Node 移行の変更とは別コミットにする。触るファイル: `server/package-lock.json` のみ。
+- [x] ステップ1(担当A: server 系): `server/package.json` に `engines.node = "24.x"` を追加し、`server/` で `npm install --package-lock-only` を実行して `server/package-lock.json` を同期する。`git diff` で lockfile の差分が `packages[""]` の `engines` 追記のみであることを確認する(大きな差分が出たら中止して報告)。触るファイル: `server/package.json`, `server/package-lock.json`。
+- [x] ステップ2(担当B: ルート系): ルート `package.json` に `engines.node = "24.x"` を追加し、ルートで `npm install --package-lock-only` を実行して `package-lock.json` を同期する。差分が `packages[""]` の `engines` 追記のみであることを確認する。触るファイル: `package.json`, `package-lock.json`。
+- [x] ステップ3(担当C: CI): `.github/workflows/deploy.yml` の `node-version` を `'24'` に変更し、`check-latest: true` を追加する。他の行(アクションのバージョンなど)は変更しない。触るファイル: `.github/workflows/deploy.yml` のみ。
+- [x] ステップ4(担当D: ドキュメント): `README.md` / `SETUP.md` の Node バージョン記述を「v24」に更新し、`server/README.md` の Render 手順に上記3点の注記を追記する。`.kiro/specs/` は更新しない。触るファイル: `README.md`, `SETUP.md`, `server/README.md` のみ。
+- [x] ステップ5(ステップ1のコミット後): `server/` で `npm audit fix`(`--force` なし)を実行する。変更が `server/package-lock.json` のみで、`server/package.json` に差分が出ないことを確認する。実行後 `npm audit` を取り、残る指摘を記録する。Node 移行の変更とは別コミットにする。触るファイル: `server/package-lock.json` のみ。
 - [ ] ステップ6(全ステップ完了後): ルートで `npm ci` → `npm test` → `npm run build` を実行し、それぞれ `node -v` を記録する(テスト戦略の合格基準を参照)。
 - [ ] ステップ7(全ステップ完了後): server のトークン無し起動(テスト戦略の手順。`server/` を cwd にしない)。実 `.env` を使う実起動確認は人間が実施する。
 - [ ] ステップ8: 実装結果と確認結果を設計書末尾の記録欄・テストレポートに引き継ぐ。デプロイ後の確認項目(テスト戦略)を人間への依頼事項として一覧にする。
