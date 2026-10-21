@@ -163,7 +163,7 @@ CSS transition 1本の方式をやめ、`requestAnimationFrame` で各列の位�
 
 既存の `animation-bug-exploration.test.js`・`animation-preservation.test.js` は円形とスロットの両方を含み、0リセット・1s/2s/3s・`animateColumn` のスパイを前提にしている。ステップ2・3ではこの2ファイルを編集せず、まだ有効な検証(針と結果の一致、最低回転数、duration、列が左から順に止まる)を新しい前提で各クラスのテストファイルに移す。ステップ2・3の作業中はこの2ファイルが失敗してよい(自分の担当テストファイルだけを実行して確認する)。ステップ7で、移し替えが済んでいることを確かめてから2ファイルを削除する。
 
-- [ ] ステップ1: `js/animations/animation-timing.js` を作る(`easeOutCubic`・`buildDecelSchedule`・`pickOffsetInSection`)。単体テスト `tests/unit/animation-timing.test.js` を書く
+- [x] ステップ1: `js/animations/animation-timing.js` を作る(`easeOutCubic`・`buildDecelSchedule`・`pickOffsetInSection`)。単体テスト `tests/unit/animation-timing.test.js` を書く
 - [ ] ステップ2: 円形 `roulette-wheel.js` を直す(相対の目標角、区画内ランダム停止、`getPointerIndex` の置き換え、`updateMembers`、`destroy` で rAF を止める、JSDoc とインデントの整理)。テストは `tests/unit/roulette-wheel.test.js` に追加し、既存2ファイルの円形の検証を新しい前提で移す
 - [ ] ステップ3: スロット `slot-machine.js` を直す(上記の式どおりの rAF 方式、`planReelMotion`/`reelPositionAt` の export、前回位置から継続、`getCenterMember`、`updateMembers`、`itemHeight` の実測、`destroy`)。テストは新規 `tests/unit/slot-machine.test.js` に書き、既存2ファイルのスロットの検証を新しい前提で移す
 - [ ] ステップ4: ドラムロール `drum-roll.js` を直す(減速スケジュール、切り替え回数 N' の調整、`currentIndex` の規則、タイマーの保持と `destroy`、`updateMembers`)。テスト: 新規 `tests/unit/drum-roll.test.js`
