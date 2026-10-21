@@ -154,9 +154,9 @@ PR を revert して main にマージし、Render で再デプロイする(自�
 
 | ラウンド | 判定 | 主な指摘 |
 | --- | --- | --- |
-| 1 |  |  |
+| 1 | PASS | MINOR 2件(対応不要と判断): `js/api-request.js` は `options.headers` で `x-access-token` を上書きできる(設計どおり、呼び出し元は渡していない)。`maskUrl` のテストに `access_token=` を変えないケースが無い(実装は正しく、任意) |
 
-未解決のMAJORが残った場合: (未実施)
+未解決のMAJORが残った場合: なし
 
 ## 人間確認ゲート記録
 
