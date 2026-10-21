@@ -2,7 +2,7 @@
 name: worktree-server-env-live-token
 type: pitfall
 status: active
-related_topics: [node24-upgrade]
+related_topics: [node24-upgrade, token-log-masking]
 created: 2026-10-21
 updated: 2026-10-21
 ---
