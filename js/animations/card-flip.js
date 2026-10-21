@@ -1,9 +1,11 @@
 import { buildDecelSchedule } from './animation-timing.js';
 
+/** 光が当選カードで止まってから当選カードをめくるまでの時間(ms) */
+const WINNER_FLIP_DELAY = 400;
 /** 当選カードをめくり始めてから残りをめくるまでの時間(ms) */
 const OTHERS_FLIP_DELAY = 300;
-/** 残りをめくり始めてから resolve するまでの時間(ms)。合計で約 1 秒 */
-const FINISH_DELAY = 700;
+/** 残りをめくり始めてから resolve するまでの時間(ms)。duration 後の合計で約 1.1 秒 */
+const FINISH_DELAY = 400;
 
 /**
  * 光るカードの順番を事前に一括で決める
@@ -208,12 +210,18 @@ export class CardFlipAnimation {
                 }, time);
             });
 
-            // 光が当選カードで止まったら当選カードをめくる
+            // duration で光を当選カードに移して止める(前の光は外す)
+            this.schedule(() => {
+                this.cards.forEach(card => card.element.classList.remove('card-flip-highlight'));
+                this.cards[winnerIndex].element.classList.add('card-flip-highlight');
+            }, duration);
+
+            // 光ったまま見せたあと、当選カードをめくる
             this.schedule(() => {
                 const winner = this.cards[winnerIndex].element;
                 winner.classList.remove('card-flip-highlight');
                 winner.classList.add('card-flip-flipped', 'card-flip-selected');
-            }, duration);
+            }, duration + WINNER_FLIP_DELAY);
 
             // 残りのカードをまとめてめくり、半透明にする
             this.schedule(() => {
@@ -222,12 +230,12 @@ export class CardFlipAnimation {
                         card.element.classList.add('card-flip-flipped', 'card-flip-unselected');
                     }
                 });
-            }, duration + OTHERS_FLIP_DELAY);
+            }, duration + WINNER_FLIP_DELAY + OTHERS_FLIP_DELAY);
 
             // 演出の終了
             this.schedule(() => {
                 this.finish();
-            }, duration + OTHERS_FLIP_DELAY + FINISH_DELAY);
+            }, duration + WINNER_FLIP_DELAY + OTHERS_FLIP_DELAY + FINISH_DELAY);
         });
     }
 

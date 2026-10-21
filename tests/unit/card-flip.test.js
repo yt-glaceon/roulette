@@ -107,20 +107,41 @@ describe('CardFlipAnimation', () => {
         }
     });
 
-    test('光が移動するたびに光るカードが1枚だけになり、duration で当選カードが止まる', async () => {
+    test('光が移動するたびに光るカードが1枚だけになる', async () => {
         const { container, animation, members } = setup(5);
         const promise = animation.spin(members[2], { duration: 2000 });
         await jest.advanceTimersByTimeAsync(1000);
         expect(container.querySelectorAll('.card-flip-highlight')).toHaveLength(1);
-        await jest.advanceTimersByTimeAsync(1001);
-        const cards = cardEls(container);
-        expect(cards[2].classList.contains('card-flip-flipped')).toBe(true);
-        expect(cards[2].classList.contains('card-flip-selected')).toBe(true);
-        expect(container.querySelectorAll('.card-flip-highlight')).toHaveLength(0);
-        // 残りはまだめくれていない
-        expect(cards[0].classList.contains('card-flip-flipped')).toBe(false);
-        await jest.advanceTimersByTimeAsync(1100);
+        await jest.advanceTimersByTimeAsync(2100);
         await promise;
+    });
+
+    test('duration 直後は光が当選カードだけに付き、めくりは duration より後', async () => {
+        for (let k = 0; k < 10; k++) {
+            document.body.innerHTML = '';
+            const { container, animation, members } = setup(5);
+            const promise = animation.spin(members[2], { duration: 2000 });
+            await jest.advanceTimersByTimeAsync(2001);
+            const cards = cardEls(container);
+            cards.forEach((el, i) => {
+                expect(el.classList.contains('card-flip-highlight')).toBe(i === 2);
+                expect(el.classList.contains('card-flip-flipped')).toBe(false);
+            });
+            // 約 400ms 光ったまま見える
+            await jest.advanceTimersByTimeAsync(300);
+            expect(cards[2].classList.contains('card-flip-highlight')).toBe(true);
+            expect(cards[2].classList.contains('card-flip-flipped')).toBe(false);
+            await jest.advanceTimersByTimeAsync(100);
+            expect(cards[2].classList.contains('card-flip-flipped')).toBe(true);
+            expect(cards[2].classList.contains('card-flip-selected')).toBe(true);
+            expect(container.querySelectorAll('.card-flip-highlight')).toHaveLength(0);
+            // 残りはさらに 300ms 後
+            expect(cards[0].classList.contains('card-flip-flipped')).toBe(false);
+            await jest.advanceTimersByTimeAsync(300);
+            expect(cards[0].classList.contains('card-flip-flipped')).toBe(true);
+            await jest.advanceTimersByTimeAsync(1100);
+            await promise;
+        }
     });
 
     test('spin 後、当選カードは card-flip-selected、他は card-flip-unselected でめくれている', async () => {

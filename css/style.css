@@ -817,6 +817,8 @@ p {
     width: 100%;
     height: 100%;
     min-height: inherit;
+    /* 表と裏を同じセルに重ね、高さは内容(表)に合わせて伸ばす */
+    display: grid;
     transform-style: preserve-3d;
     transition: transform 0.4s ease;
 }
@@ -826,8 +828,7 @@ p {
 }
 
 .card-flip-face {
-    position: absolute;
-    inset: 0;
+    grid-area: 1 / 1;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -885,6 +886,7 @@ p {
 .card-flip-avatar {
     width: 80px;
     height: 80px;
+    flex-shrink: 0;
     border-radius: 50%;
     background: var(--primary-color);
     display: flex;
