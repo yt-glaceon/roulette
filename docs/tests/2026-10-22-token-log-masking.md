@@ -173,7 +173,7 @@ GET     http://localhost:3999/api/validate-token → 401 Unauthorized
 ## 未検証の観点・既知の制限事項
 
 - 実 Bot での `/roulette` の動作(Bot のログインはダミートークンのため失敗する状態で確認した。本番 Bot との二重ログインを避けるため)
-- Render のデプロイの Trigger(自動かコミットか手動か)の確認([[render-root-dir-autodeploy]] の未確認事項。リリース後に人間が確認)
+- Render のデプロイの Trigger(自動かコミットか手動か)の確認([[render-root-dir-autodeploy]] の未確認事項。リリース後に人間が確認)→ リリース後に確認済み(下記「リリース後の確認」)
 - 本番フロント(GitHub Pages)と Render の疎通、Render のログが `トークン生成: xxxxxx… (Guild: …)` の形になっていること(リリース後に人間が確認)
 - `server/index.js` 本体(Discord・Express 結合部分)の自動テストは無い(設計どおり)。`/roulette` の catch 内 `reply` 失敗時の挙動は、実 Bot では再現していない
 
@@ -194,6 +194,22 @@ PR #7 のマージ時に、先に main に入った ci-actions(PR #6、ESLint �
 | Lint | `npm run lint`(`eslint . --max-warnings 0`、`npm ci` 後) | pass |
 | 自動テスト | `npm test`: 14スイート 167件 | pass |
 | ビルド | `npm run build` | pass |
+
+## リリース後の確認(2026-10-22、メインエージェントが実施)
+
+PR #7 は 15:59 UTC にマージした(マージコミット `b44086e`)。
+
+| 確認 | 結果 |
+| --- | --- |
+| Render のデプロイ Trigger | Events に「Deploy started for b44086e … New commit via Auto-Deploy」が 16:04 UTC、「Deploy live」が 16:05 UTC に出た。`server/` を変えたコミットは自動デプロイされることを確認した([[render-root-dir-autodeploy]] の未確認事項を解消) |
+| 本番 API の切り替わり | `GET https://roulette-api-nsza.onrender.com/api/validate-token?token=dummy` の応答が、デプロイ前は `無効なトークンです`(旧サーバーはクエリを読む)、16:05:55 UTC 以降は `アクセストークンが必要です` になった。`x-access-token: dummy` ヘッダ付きは `無効なトークンです`。`GET /` は `{"status":"ok","bot":"Voice Channel  Roulette Bot#5798","guilds":4}` |
+| 本番の起動ログ | 新インスタンス(01:05 JST)で `✅ Bot logged in as …` と `✅ スラッシュコマンドの登録完了` が出ている。直近1時間のログに `エラー` を含む行は無い(Render のログ検索で確認) |
+| GitHub Pages | 本番バンドル(`assets/index-viVQ_7mG.js`)に `x-access-token` が含まれ、ヘッダ送信版が反映済み |
+
+まだ確認していないこと(人間が確認する。Discord でのコマンド実行はエージェントが代行しない):
+
+- Discord で `/roulette` を実行して URL を開き、チャネル一覧・メンバー取得・抽選まで動くこと
+- そのときの Render のログが `[Roulette] トークン生成: xxxxxx… (Guild: …)` の形になっていること
 
 ## 人間確認ゲート記録
 
