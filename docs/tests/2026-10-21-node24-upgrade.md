@@ -83,12 +83,21 @@ Node.js v24.13.1
 
 (b) デプロイ後の確認(設計書「デプロイ後の確認」1〜6)
 
-- [ ] 1. GitHub Actions の `Setup Node.js` で使われた Node が 24.22.1 以降(未満なら追跡事項として残す)
-- [ ] 2. Render のデプロイが今回のマージコミットであること(自動デプロイが走らなければ Manual Deploy。古いログで判断しない)
-- [ ] 3. デプロイログの `==> Using Node.js version ...` を全文記録し、24 系でなければ `NODE_VERSION=24`、24.22.1 未満なら `NODE_VERSION=24.22.1` を試す
-- [ ] 4. Render の Environment の `NODE_VERSION` の有無を確認
-- [ ] 5. デプロイ後に Bot が再接続しログインし、`GET /` が `status: ok` を返す(コールドスタートを考慮)
-- [ ] 6. 実測結果を調査ドキュメントの未解決事項 2・3 と `render-node-version` エントリに追記
+- [x] 1. GitHub Actions の `Setup Node.js` で使われた Node が 24.22.1 以降(未満なら追跡事項として残す)
+- [x] 2. Render のデプロイが今回のマージコミットであること(自動デプロイが走らなければ Manual Deploy。古いログで判断しない)
+- [x] 3. デプロイログの `==> Using Node.js version ...` を全文記録し、24 系でなければ `NODE_VERSION=24`、24.22.1 未満なら `NODE_VERSION=24.22.1` を試す
+- [x] 4. Render の Environment の `NODE_VERSION` の有無を確認
+- [x] 5. デプロイ後に Bot が再接続しログインし、`GET /` が `status: ok` を返す(コールドスタートを考慮)
+- [x] 6. 実測結果を調査ドキュメントの未解決事項 2・3 と `render-node-version` エントリに追記
+
+デプロイ後の確認結果(2026-10-21〜22、マージコミット 43cb53b):
+
+1. GitHub Actions(run 39625601391、成功): `Setup Node.js` は `Attempting to download 24.22.0...` / `node: v24.22.0`。`check-latest: true` でも 24.22.1 ではなかった(setup-node の配布元に修正版がまだ無いとみられる)。**追跡事項**: 次回以降の実行で 24.22.1 以降になることを確認する。ビルド時のみの利用で本番は静的配信のため実害は小さい。なお GitHub の障害(Delays for Pull Requests and Webhook deliveries)で、実行はマージから約 20 分遅れた。
+2. Render の自動デプロイは走らなかった(GitHub の Webhook 遅延障害と重なったとみられる)。ユーザーが Manual Deploy し、デプロイ対象が 43cb53b であることを確認。
+3. デプロイログ: `==> Requesting Node.js version 24.x` / `==> Using Node.js version 24.22.1 via /opt/render/project/src/server/package.json`。engines が読まれ、修正版 24.22.1 になった。`npm install` の audit は `found 0 vulnerabilities`。
+4. `NODE_VERSION` は未設定のまま(設定不要だった)。
+5. 「Bot logged in as ...」「スラッシュコマンドの登録完了」「Your service is live」。`GET https://roulette-api-nsza.onrender.com/` が `{"status":"ok", ...}` を返した。
+6. 調査ドキュメントの未解決事項 2・3 と共有メモリ `render-node-version` に反映済み。
 
 ## 再テスト(ステップ9 後)
 
@@ -123,6 +132,8 @@ express 4.22.3 / qs 6.16.1 での実 API 応答(path-to-regexp、qs のクエリ
 未解決の MAJOR なし。MINOR 1 件(express@4.22.3 への lockfile 更新)は、ゲート2の修正依頼でステップ9として実施済み(コミット 508c688)。結果は上記「再テスト(ステップ9 後)」を参照。
 
 ## 総合判定
+
+**最終: 合格**(ローカル起動確認、デプロイ後確認とも完了。追跡事項は GitHub Actions の Node が 24.22.0 だった点のみ)。
 
 エージェントで確認できる範囲: 合格(初回テストおよびステップ9後の再テストとも、Node v24.13.1 で問題なし)。ステップ9後は server の `npm audit` が 0 件(critical / high / moderate いずれも無し)になった。
 
