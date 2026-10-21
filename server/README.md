@@ -175,6 +175,12 @@ https://yt-glaceon.github.io/roulette?token=abc123...
    - `FRONTEND_URL`: `https://yt-glaceon.github.io/roulette`
 6. 「Create Web Service」をクリック
 
+#### Node バージョンの指定と確認
+
+- Node バージョンは `server/package.json` の `engines`（`24.x`）で指定している（ルートの `package.json` も同じ値にそろえている）
+- デプロイログの冒頭に出る Node バージョンが 24.22.1 以降か確認する
+- 24 系にならない場合は、Render の Environment に `NODE_VERSION=24` を設定する。24 系でもパッチが古い場合は `NODE_VERSION=24.22.1` のように完全指定する（`NODE_VERSION` は `engines` より優先される）
+
 ## トラブルシューティング
 
 ### Bot がオンラインにならない

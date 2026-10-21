@@ -13,7 +13,7 @@
 
 ### 前提条件
 
-- Node.js v20 以上
+- Node.js v24
 - npm または yarn
 - Git
 
