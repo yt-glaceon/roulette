@@ -73,7 +73,7 @@ DB変更・フロントエンドの構成変更はないため、`db-designer` /
 - [ ] ステップ6(全ステップ完了後): ルートで `npm ci` → `npm test` → `npm run build` を実行し、それぞれ `node -v` を記録する(テスト戦略の合格基準を参照)。
 - [ ] ステップ7(全ステップ完了後): server のトークン無し起動(テスト戦略の手順。`server/` を cwd にしない)。実 `.env` を使う実起動確認は人間が実施する。
 - [ ] ステップ8: 実装結果と確認結果を設計書末尾の記録欄・テストレポートに引き継ぐ。デプロイ後の確認項目(テスト戦略)を人間への依頼事項として一覧にする。
-- [ ] ステップ9(ゲート2でユーザーが追加、ステップ5の後): `server/` で `npm update express --package-lock-only` を実行し、express を 4.22.3 以降(`^4.18.2` の範囲内)に上げて qs を修正版にする。変更は `server/package-lock.json` のみで `server/package.json` は不変。メジャー更新が混じらないこと。実行後 `npm audit` が 0 件(または残る理由)を記録し、トークン無し起動を再確認する。別コミット。触るファイル: `server/package-lock.json` のみ。
+- [x] ステップ9(ゲート2でユーザーが追加、ステップ5の後): `server/` で `npm update express --package-lock-only` を実行し、express を 4.22.3 以降(`^4.18.2` の範囲内)に上げて qs を修正版にする。変更は `server/package-lock.json` のみで `server/package.json` は不変。メジャー更新が混じらないこと。実行後 `npm audit` が 0 件(または残る理由)を記録し、トークン無し起動を再確認する。別コミット。触るファイル: `server/package-lock.json` のみ。
 
 ## テスト戦略
 
