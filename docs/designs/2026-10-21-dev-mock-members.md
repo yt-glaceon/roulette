@@ -83,13 +83,13 @@
 
 ## 実装ステップ
 
-- [ ] ステップ1: `js/dev/mock-data.js` を作る(`MOCK_GUILD`・`parseMockCount`・`createMockMembers`・`buildMockChannels`)
-- [ ] ステップ2: `tests/unit/mock-data.test.js` を作る(下記テスト戦略の項目。fast-check は既存テストと同じく `import fc from 'fast-check'`)
-- [ ] ステップ3: `js/dev/mock-discord-client.js` を作る(ステップ1に依存)
-- [ ] ステップ4: `tests/unit/mock-discord-client.test.js` を作る(ステップ3に依存)
-- [ ] ステップ5: `js/dev/mock-badge.js` を作り、`tests/unit/mock-badge.test.js` を作る(他と独立)
-- [ ] ステップ6: `js/app-controller.js` に `?mock` の分岐と開発時の案内文を追加する(ステップ3・5に依存)
-- [ ] ステップ7: `docs/process/project-dev.md` の「起動・動作確認の方法」にモックの使い方と、本番ビルドに含まれていないことの確認方法を追記する
+- [x] ステップ1: `js/dev/mock-data.js` を作る(`MOCK_GUILD`・`parseMockCount`・`createMockMembers`・`buildMockChannels`)
+- [x] ステップ2: `tests/unit/mock-data.test.js` を作る(下記テスト戦略の項目。fast-check は既存テストと同じく `import fc from 'fast-check'`)
+- [x] ステップ3: `js/dev/mock-discord-client.js` を作る(ステップ1に依存)
+- [x] ステップ4: `tests/unit/mock-discord-client.test.js` を作る(ステップ3に依存)
+- [x] ステップ5: `js/dev/mock-badge.js` を作り、`tests/unit/mock-badge.test.js` を作る(他と独立)
+- [x] ステップ6: `js/app-controller.js` に `?mock` の分岐と開発時の案内文を追加する(ステップ3・5に依存)
+- [x] ステップ7: `docs/process/project-dev.md` の「起動・動作確認の方法」にモックの使い方と、本番ビルドに含まれていないことの確認方法を追記する
 
 ## テスト戦略
 

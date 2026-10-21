@@ -29,16 +29,27 @@ class AppController {
             const params = new URLSearchParams(window.location.search);
             this.accessToken = params.get('token');
 
-            if (!this.accessToken) {
-                this.ui.showError(
-                    'アクセストークンが必要です。\n' +
-                    'Discord で /roulette コマンドを実行して URL を取得してください。'
-                );
-                return;
-            }
+            if (import.meta.env.DEV && params.has('mock')) {
+                // 開発時のみ: ダミーメンバーのモッククライアントを使う（?token より優先）
+                const { createMockDiscordClient } = await import('./dev/mock-discord-client.js');
+                const { showMockBadge } = await import('./dev/mock-badge.js');
+                this.discordClient = createMockDiscordClient(params);
+                showMockBadge();
+            } else {
+                if (!this.accessToken) {
+                    this.ui.showError(
+                        'アクセストークンが必要です。\n' +
+                        'Discord で /roulette コマンドを実行して URL を取得してください。' +
+                        (import.meta.env.DEV
+                            ? '\n開発時は URL に ?mock を付けるとダミーメンバーで確認できます(例: ?mock=12)'
+                            : '')
+                    );
+                    return;
+                }
 
-            // Discord クライアントを初期化（トークン付き）
-            this.discordClient = new DiscordClient(this.accessToken);
+                // Discord クライアントを初期化（トークン付き）
+                this.discordClient = new DiscordClient(this.accessToken);
+            }
 
             // トークンを検証
             const validation = await this.discordClient.validateToken();
