@@ -583,6 +583,18 @@ export class UIController {
         }
 
     /**
+     * 先頭 count 人の当選者を除いた残りのメンバーを返す（id で比較）
+     * @param {Array} members - 全メンバー
+     * @param {Array} selected - 選出されたメンバー
+     * @param {number} count - 除外する当選者の人数（selected の先頭から）
+     * @returns {Array}
+     */
+    getRemainingMembers(members, selected, count) {
+        const wonIds = new Set(selected.slice(0, count).map(m => m.id));
+        return members.filter(m => !wonIds.has(m.id));
+    }
+
+    /**
      * ルーレットアニメーションを実行
      * @param {Array} members - 全メンバー（除外後）
      * @param {Array} selected - 選出されたメンバー
@@ -663,8 +675,12 @@ export class UIController {
             
             // 各選出メンバーに対してアニメーションを実行
             for (let i = 0; i < selected.length; i++) {
+                // 2回目以降は当選済みのメンバーを盤面から外す
+                if (i >= 1) {
+                    animation.updateMembers(this.getRemainingMembers(members, selected, i));
+                }
                 await animation.spin(selected[i], { duration: animationDuration });
-                
+
                 // 最後のスピン以外は待機
                 if (i < selected.length - 1) {
                     await this.sleep(500);
@@ -681,6 +697,9 @@ export class UIController {
             animation.initialize(members);
             
             for (let i = 0; i < selected.length; i++) {
+                if (i >= 1) {
+                    animation.updateMembers(this.getRemainingMembers(members, selected, i));
+                }
                 await animation.spin(selected[i], { duration: animationDuration });
                 if (i < selected.length - 1) {
                     await this.sleep(500);
