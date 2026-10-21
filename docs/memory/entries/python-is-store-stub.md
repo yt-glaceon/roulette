@@ -2,9 +2,9 @@
 name: python-is-store-stub
 type: pitfall
 status: active
-related_topics: [roulette-animation-behavior]
+related_topics: [roulette-animation-behavior, ci-actions]
 created: 2026-10-21
-updated: 2026-10-21
+updated: 2026-10-22
 ---
 
 この開発環境(Windows)の Bash で `python` を呼ぶと Microsoft Store のスタブが起動するだけで、スクリプトは実行されない(エラーにならず "Python" と出るだけ)。Python で一括編集したつもりでもファイルは変わらず、変更前のコードでテストが通ってしまう。

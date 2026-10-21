@@ -12,7 +12,7 @@ Discord のボイスチャネルのメンバーからランダムに選ぶルー
     - `animation-timing.js` … 演出の時間配分と停止位置を計算する純粋関数
 - `server/`(バックエンド): Node.js + Express + discord.js。`server/index.js`。依存は `server/package.json` で別管理。
 - `tests/unit/` … Jest(jsdom)+ fast-check のユニットテスト。
-- TypeScript・Lint・型チェックは未導入。
+- TypeScript・型チェックは未導入。Lint は ESLint(`npm run lint`、設定は `eslint.config.js`)。
 
 ## 起動・動作確認の方法
 
@@ -32,9 +32,14 @@ Discord のボイスチャネルのメンバーからランダムに選ぶルー
 
 - `npm test` … `node --experimental-vm-modules` 経由で Jest を実行する(ES Modules のため)。
 - `npm run build` … Vite で `dist/` にビルドする。本番デプロイと同じビルドが通るかの確認になる。
+- `npm run lint` … ESLint(`eslint . --max-warnings 0`)。警告も 0 件が必要。
 - server/ にはテストがない。server/ を変更するトピックでは、起動確認や `curl` での手動確認が必要。
+- CI: `.github/workflows/ci.yml` の `verify` ジョブが、main 向け PR と main への push で走る。検証手順は composite action `.github/actions/verify` に集約されており、`deploy.yml` の `pre-deploy-verify` も同じ action を使う。手順は `npm ci` → `npm ci --prefix server` → lint → `node --check server/index.js` → `npm test` → `npm run build`(ダミーの `VITE_API_URL`)→ モック混入チェック。
+  - 上の「本番ビルドにモックが含まれていないことの確認」は CI でも自動実行される。
+  - 必須チェック名 `verify` は変えない。ブランチ保護の必須チェックと食い違うとマージできなくなる。ci.yml 以外に `verify` という名前のジョブを作らない。
 
 ## 注意点
 
 - `main` へのマージ = GitHub Pages への本番デプロイ(フロントエンドのみ)。`stagingBranch` は無いので、マージ前にトピックの worktree で人間が動作確認する。
+- main は PR 必須で、必須チェック `verify` が通るまで `gh pr merge` は拒否される(ブランチ保護)。マージ前に `gh pr checks --watch` で CI が緑になるのを待ってから `gh pr merge` する(または `gh pr merge --auto`)。CI 自体が壊れた緊急時のみ `gh pr merge --admin`。main への直接 push はしない。
 - `.kiro/specs/` に過去の Kiro による要件・設計・タスクの記録がある。調査・設計フェーズでは既存の仕様として参照する(移動・編集はしない)。

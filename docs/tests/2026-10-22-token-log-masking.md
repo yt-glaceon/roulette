@@ -185,6 +185,16 @@ GET     http://localhost:3999/api/validate-token → 401 Unauthorized
 
 合格
 
+## リリース時の追記(main 取り込み後の再検証)
+
+PR #7 のマージ時に、先に main に入った ci-actions(PR #6、ESLint と CI の導入)と `docs/memory/` の2ファイル(`MEMORY.md` の索引追記、`import-meta-env-in-jest.md` の `related_topics`)が衝突した。人間の了承を得て、両方の追記を残す形で解決し、origin/main をマージした。取り込み後に再検証した結果は次のとおり。
+
+| 種別 | 内容 | 結果 |
+| --- | --- | --- |
+| Lint | `npm run lint`(`eslint . --max-warnings 0`、`npm ci` 後) | pass |
+| 自動テスト | `npm test`: 14スイート 167件 | pass |
+| ビルド | `npm run build` | pass |
+
 ## 人間確認ゲート記録
 
 | 日時 | 判断 | コメント |

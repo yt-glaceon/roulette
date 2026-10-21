@@ -2,7 +2,7 @@
 name: import-meta-env-in-jest
 type: pitfall
 status: active
-related_topics: [dev-mock-members, token-log-masking]
+related_topics: [dev-mock-members, ci-actions, token-log-masking]
 created: 2026-10-21
 updated: 2026-10-21
 ---
