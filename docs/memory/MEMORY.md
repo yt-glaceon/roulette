@@ -18,6 +18,8 @@
 
 <!-- 例: - [ci-no-network](entries/ci-no-network.md) — CI環境は外部ネットワークにアクセスできない、モック必須 -->
 - [import-meta-env-in-jest](entries/import-meta-env-in-jest.md) — Jest では import.meta.env が undefined。env 参照はエントリポイントに寄せ、ロジックは切り出す
+- [same-tick-visual-state](entries/same-tick-visual-state.md) — 同じ tick で付けて外した見た目の状態は描画されない。確定の瞬間は時間をずらして見せる
+- [absolute-stacked-faces-height](entries/absolute-stacked-faces-height.md) — 2面とも absolute で重ねると高さが伸びない。片面を通常の流れに置く。長い名前のモックで確認
 - [jest-esm-globals](entries/jest-esm-globals.md) — ESM 実行の Jest では jest がグローバルに無い。@jest/globals から import し、モックは prototype の spyOn で
 
 ## glossary(プロジェクト固有の用語集)
