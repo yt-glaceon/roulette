@@ -1,4 +1,5 @@
 import { config } from './config.js';
+import { buildApiRequest } from './api-request.js';
 
 /**
  * Discord API クライアント（バックエンド経由・トークンベース）
@@ -17,16 +18,10 @@ export class DiscordClient {
      * @returns {Promise<Object>} レスポンス
      */
     async request(endpoint, options = {}) {
-        const url = `${this.apiEndpoint}${endpoint}${endpoint.includes('?') ? '&' : '?'}token=${this.accessToken}`;
+        const { url, init } = buildApiRequest(this.apiEndpoint, endpoint, this.accessToken, options);
 
         try {
-            const response = await fetch(url, {
-                ...options,
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...options.headers
-                }
-            });
+            const response = await fetch(url, init);
 
             // エラーハンドリング
             if (!response.ok) {
