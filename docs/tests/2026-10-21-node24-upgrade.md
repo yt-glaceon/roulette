@@ -70,14 +70,16 @@ Node.js v24.13.1
 
 (a) 実 `.env` でのローカル起動確認(マージ前、人間が実施)
 
-- [ ] 前提: ワークツリーの `server/node_modules` が `npm ci --prefix server` 済みで express が 4.22.3 であること(再テストで実施済み。別環境で行う場合は再度 `npm ci`)
-- [ ] Render のサービスを Suspend する(本番 Bot との二重起動回避。できない場合は二重起動を許容しローカル API の直接確認に限る)
-- [ ] ワークツリーの `server/` で Node 24 を使い `npm start`
-- [ ] ログに「Bot logged in as ...」「スラッシュコマンドの登録完了」「Server running on port ...」が出る
-- [ ] `curl http://localhost:<ログのポート>/` が `status: ok` を返す
-- [ ] Discord で `/roulette` を実行し、ローカルのログに `[Roulette] トークン生成:` が出る
-- [ ] そのトークンで `/api/validate-token?token=...`、`/api/guild`、`/api/guild/channels`、`/api/guild/channels/<channelId>/members` が正しく応答する(トークン値は記録に書かない)
-- [ ] 確認後、Render を Resume する
+- [x] 前提: ワークツリーの `server/node_modules` が `npm ci --prefix server` 済みで express が 4.22.3 であること(再テストで実施済み。別環境で行う場合は再度 `npm ci`)
+- [x] Render のサービスを Suspend する(本番 Bot との二重起動回避。できない場合は二重起動を許容しローカル API の直接確認に限る)
+- [x] ワークツリーの `server/` で Node 24 を使い `npm start`
+- [x] ログに「Bot logged in as ...」「スラッシュコマンドの登録完了」「Server running on port ...」が出る
+- [x] `curl http://localhost:<ログのポート>/` が `status: ok` を返す
+- [x] Discord で `/roulette` を実行し、ローカルのログに `[Roulette] トークン生成:` が出る
+- [x] そのトークンで `/api/validate-token?token=...`、`/api/guild`、`/api/guild/channels`、`/api/guild/channels/<channelId>/members` が正しく応答する(トークン値は記録に書かない)
+- [x] 確認後、Render を Resume する
+
+2026-10-21 ユーザーがローカル起動確認を実施し、問題なし(Bot ログイン、スラッシュコマンド登録、API 応答 OK。Render は確認後 Resume 済み)。
 
 (b) デプロイ後の確認(設計書「デプロイ後の確認」1〜6)
 
@@ -114,7 +116,7 @@ Node.js v24.13.1
 
 注記: 作業順の都合で、npm ci の前(更新前の node_modules)にも同じ起動を 1 回実行し、同じ結果だった。上記の証跡と判定は npm ci 後の再実行のもの。
 
-express 4.22.3 / qs 6.16.1 での実 API 応答(path-to-regexp、qs のクエリ解析、body-parser)は、実 .env が必要なため人間の確認待ち(上記 (a))のまま。
+express 4.22.3 / qs 6.16.1 での実 API 応答(path-to-regexp、qs のクエリ解析、body-parser)は、2026-10-21 にユーザーのローカル起動確認で問題なしを確認。
 
 ## コードレビューからの引き継ぎ
 
@@ -124,7 +126,7 @@ express 4.22.3 / qs 6.16.1 での実 API 応答(path-to-regexp、qs のクエリ
 
 エージェントで確認できる範囲: 合格(初回テストおよびステップ9後の再テストとも、Node v24.13.1 で問題なし)。ステップ9後は server の `npm audit` が 0 件(critical / high / moderate いずれも無し)になった。
 
-ただし、実 `.env` でのローカル起動確認とデプロイ後確認は「人間の確認待ち」であり、完全な合格判定はそれらの完了後。
+実 `.env` でのローカル起動確認は 2026-10-21 にユーザーが実施して問題なし。デプロイ後確認は残る。
 
 ## 人間確認ゲート記録
 
