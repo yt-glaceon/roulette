@@ -163,10 +163,10 @@ DB変更・フロントエンドの構成変更はないため、`db-designer` /
 
 | ラウンド | 判定 | 主な指摘 |
 | --- | --- | --- |
-| 1 | PASS / MAJOR |  |
-| 2(ラウンド1がMAJORの場合のみ) | PASS / MAJOR |  |
+| 1 | PASS | MAJOR なし。MINOR 1件: express@4.22.3(qs ~6.16.0)が ^4.18.2 の範囲で公開済みで、残る qs の指摘は `npm update express --package-lock-only` で消せる見込み → 共有メモリ express-qs-pinned-audit を修正。実行するかはゲート2でユーザーに確認 |
+| 2 | - | ラウンド1が PASS のため実施せず |
 
-未解決のMAJORが残った場合: (なければ「なし」。テストレポートにも引き継ぐこと)
+未解決のMAJORが残った場合: なし
 
 ## 人間確認ゲート記録
 
