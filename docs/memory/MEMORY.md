@@ -26,6 +26,7 @@
 - [render-root-dir-autodeploy](entries/render-root-dir-autodeploy.md) — Render は Root Directory(server)の外だけの変更では自動デプロイしない。まず差分に server/ があるか見る
 - [worktree-server-env-live-token](entries/worktree-server-env-live-token.md) — ワークツリーの server/.env は本番トークン。server/ を cwd に起動すると本番 Bot と二重ログインする
 - [express-qs-pinned-audit](entries/express-qs-pinned-audit.md) — express@4.22.1 が qs 6.14.2 を固定し、audit fix 後も qs の moderate が 1 件残る。`npm update express --package-lock-only` で直る(確認前に npm ci)
+- [eslint-flat-config-ignores](entries/eslint-flat-config-ignores.md) — ESLint flat config は .gitignore を読まない。dist/coverage/.claude を globalIgnores で明示。v10 は recommended に 3 ルール追加
 
 ## glossary(プロジェクト固有の用語集)
 
