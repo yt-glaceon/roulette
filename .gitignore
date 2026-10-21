@@ -16,3 +16,6 @@ dist-ssr/
 # エディタ設定
 .vscode/
 .idea/
+
+# loop-basic のトピック専用 worktree
+.claude/worktrees/

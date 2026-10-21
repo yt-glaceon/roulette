@@ -1,0 +1,20 @@
+{
+  "productPaths": ["*"],
+  "guardExclude": [".kiro/", ".vscode/"],
+  "baseBranch": "main",
+  "stagingBranch": null,
+  "protectedBranches": ["main"],
+  "deployNote": "main への push で GitHub Actions(.github/workflows/deploy.yml)が走り、GitHub Pages に本番デプロイされる。server/ は自動デプロイされない",
+  "verify": {
+    "test": "npm test",
+    "build": "npm run build",
+    "lint": null,
+    "typecheck": null,
+    "e2e": null
+  },
+  "worktree": {
+    "copyFiles": [".env", "server/.env"],
+    "setup": ["npm ci", "npm ci --prefix server"]
+  },
+  "references": [".kiro/specs/", "README.md", "SETUP.md"]
+}
