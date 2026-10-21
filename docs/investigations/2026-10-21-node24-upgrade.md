@@ -147,8 +147,8 @@
 ## 未解決の疑問・要確認事項
 
 1. (解決・2026-10-21 ダッシュボードで確認)現在の Node は `22.22.0 (default)`(修正前)。`NODE_VERSION` は未設定。Root Directory は `server`、Build Command は `npm install`。最初のデプロイは約 8 か月前。
-2. Root Directory が `server` のとき、Render が読む `package.json` / `.node-version` / `.nvmrc` の位置(公式に記載なし)。Render のサポートに問い合わせるか、実際にデプロイして検証する必要がある。
-3. engines の `24.x` が Render で最新パッチ(24.22.1 以降)に解決されるか(解決は `node-version-alias` だが、利用可能な版の取得元は文書化されていない)。
+2. (解決・2026-10-22 実測)Root Directory が `server` のとき、Render は `server/package.json` の engines を読んだ(ログ: `Using Node.js version 24.22.1 via /opt/render/project/src/server/package.json`)。以下は当初の疑問: Root Directory が `server` のとき、Render が読む `package.json` / `.node-version` / `.nvmrc` の位置(公式に記載なし)。Render のサポートに問い合わせるか、実際にデプロイして検証する必要がある。
+3. (解決・2026-10-22 実測)`24.x` は Render で 24.22.1(修正版、リリース当日)に解決された。以下は当初の疑問: engines の `24.x` が Render で最新パッチ(24.22.1 以降)に解決されるか(解決は `node-version-alias` だが、利用可能な版の取得元は文書化されていない)。
 4. (解決)ローカル Node v24.13.1 で `npm test` / `npm run build` とも成功。ローカルの Node 自体は修正版 24.22.1 より古い(ローカル更新は利用者側で別途)。
 5. (内訳判明)server の `npm audit` 9 件は「範囲外の関連事項」の表のとおり。今回含めるかは設計で決める。
 6. discord.js / undici 経由の Brotli 展開経路の有無。
