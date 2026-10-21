@@ -322,5 +322,6 @@ describe('SlotMachineAnimation(実時間の spin)', () => {
         expect(container.innerHTML).toBe('');
 
         cancelSpy.mockRestore();
+        rafSpy.mockRestore();
     });
 });
