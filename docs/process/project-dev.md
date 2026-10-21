@@ -17,6 +17,13 @@ Discord のボイスチャネルのメンバーからランダムに選ぶルー
 
 - フロントエンド: ルートで `npm run dev`(Vite の開発サーバー)。
 - バックエンド: `server/` で `npm run dev`(または `npm start`)。Discord Bot のトークン等が `server/.env` に必要。
+- Discord なしで確認するモック: `npm run dev` → `http://localhost:5500/roulette/?mock`(プリセット5チャネル)/ `?mock=12`(12人のチャネルを先頭に追加。1〜100)。
+  - 開発サーバー専用。本番ビルドと `vite preview` では無効。`?token` と併用した場合はモック優先。
+  - プリセット: 通常(8人)/ 大人数(30人)/ 長い名前・絵文字・アバター無し(6人)/ 1人 / 0人。
+  - モックでは確認できないこと: 実 API・CORS・トークン期限切れ。これらに関わる変更は実環境(Bot 起動)で確認する。
+  - 本番ビルドにモックが含まれていないことの確認: `npm run build` 後に `dist/` の `*.js`・`*.html`(`*.map` は対象外)に `【モック】`・`mock-badge` が無く、`dist/assets/` に名前に `mock` を含むファイルが無いこと。
+    - PowerShell: `Get-ChildItem dist -Recurse -Include *.js,*.html | Select-String '【モック】|mock-badge'` が 0 件
+    - bash: `grep -rlE '【モック】|mock-badge' dist --include='*.js' --include='*.html'` が 0 件
 - 詳しい手順は `README.md`・`SETUP.md` を参照。
 - `.env`(ルート)と `server/.env` は git 管理外。worktree 作成時に `worktree.copyFiles` で元のリポジトリからコピーされる。中身を会話やドキュメントに書き出さないこと。
 
