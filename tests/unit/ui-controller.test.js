@@ -2,7 +2,12 @@
  * @jest-environment jsdom
  */
 
+import { jest } from '@jest/globals';
 import { UIController } from '../../js/ui-controller.js';
+import { RouletteWheel } from '../../js/animations/roulette-wheel.js';
+import { SlotMachineAnimation } from '../../js/animations/slot-machine.js';
+import { DrumRollAnimation } from '../../js/animations/drum-roll.js';
+import { CardFlipAnimation } from '../../js/animations/card-flip.js';
 
 describe('UIController - 除外リスト機能', () => {
     let uiController;
@@ -423,8 +428,185 @@ describe('UIController - ロール付き結果表示機能', () => {
         const card = uiController.createResultCard(member, 1);
 
         expect(card.className).toBe('result-card');
-        
+
         const roleElement = card.querySelector('.member-role');
         expect(roleElement).toBeNull();
+    });
+});
+
+describe('UIController - animateRoulette の updateMembers 呼び出し', () => {
+    const classes = [RouletteWheel, SlotMachineAnimation, DrumRollAnimation, CardFlipAnimation];
+    const originals = new Map();
+    let uiController;
+    let order;
+    let members;
+
+    beforeEach(() => {
+        document.body.innerHTML = `
+            <div id="channel-screen" class="screen"></div>
+            <div id="roulette-screen" class="screen hidden">
+                <div class="container">
+                    <div id="member-list" class="member-grid"></div>
+                </div>
+                <div id="show-results-container" class="hidden"></div>
+            </div>
+            <div id="result-screen" class="screen hidden"></div>
+            <div id="loading" class="loading hidden"></div>
+            <div id="error-message" class="error-message hidden"><p id="error-text"></p></div>
+        `;
+        localStorage.clear();
+        jest.spyOn(console, 'log').mockImplementation(() => {});
+        jest.spyOn(console, 'error').mockImplementation(() => {});
+
+        order = [];
+        classes.forEach(cls => {
+            // updateMembers が未実装でも spy できるように代入しておく
+            const hasOwn = Object.prototype.hasOwnProperty.call(cls.prototype, 'updateMembers');
+            originals.set(cls, hasOwn ? cls.prototype.updateMembers : undefined);
+            if (!hasOwn) {
+                cls.prototype.updateMembers = jest.fn();
+            }
+            jest.spyOn(cls.prototype, 'initialize').mockImplementation(() => {});
+            jest.spyOn(cls.prototype, 'updateMembers').mockImplementation(() => {
+                order.push('update');
+            });
+            jest.spyOn(cls.prototype, 'spin').mockImplementation(() => {
+                order.push('spin');
+                return Promise.resolve();
+            });
+        });
+
+        members = ['1', '2', '3', '4', '5'].map(id => ({ id, displayName: `m${id}`, avatar: null }));
+        uiController = new UIController();
+        uiController.sleep = () => Promise.resolve();
+    });
+
+    afterEach(() => {
+        classes.forEach(cls => {
+            cls.prototype.initialize.mockRestore();
+            cls.prototype.spin.mockRestore();
+            cls.prototype.updateMembers.mockRestore();
+            const orig = originals.get(cls);
+            if (orig) {
+                cls.prototype.updateMembers = orig;
+            } else {
+                delete cls.prototype.updateMembers;
+            }
+        });
+        originals.clear();
+        jest.restoreAllMocks();
+    });
+
+    const idsOf = call => call[0].map(m => m.id);
+
+    test.each([
+        ['wheel', RouletteWheel],
+        ['slot', SlotMachineAnimation],
+        ['drum', DrumRollAnimation],
+        ['card', CardFlipAnimation]
+    ])('%s: 2回目以降の spin の前に当選者を除いた updateMembers が呼ばれる', async (type, cls) => {
+        localStorage.setItem('roulette_animation_type', type);
+        const selected = [members[3], members[0], members[2]];
+
+        await uiController.animateRoulette(members, selected);
+
+        const update = cls.prototype.updateMembers.mock.calls;
+        expect(update.length).toBe(2);
+        expect(idsOf(update[0])).toEqual(['1', '2', '3', '5']);
+        expect(idsOf(update[1])).toEqual(['2', '3', '5']);
+        expect(order).toEqual(['spin', 'update', 'spin', 'update', 'spin']);
+    });
+
+    test('1人選出のときは updateMembers が呼ばれない', async () => {
+        localStorage.setItem('roulette_animation_type', 'wheel');
+        await uiController.animateRoulette(members, [members[1]]);
+        expect(RouletteWheel.prototype.updateMembers).not.toHaveBeenCalled();
+    });
+
+    test('1回目の spin が例外のとき、フォールバックの円形でも updateMembers が呼ばれる', async () => {
+        localStorage.setItem('roulette_animation_type', 'slot');
+        SlotMachineAnimation.prototype.spin.mockImplementation(() => Promise.reject(new Error('fail')));
+        const selected = [members[1], members[4], members[0]];
+
+        await uiController.animateRoulette(members, selected);
+
+        expect(SlotMachineAnimation.prototype.updateMembers).not.toHaveBeenCalled();
+        const update = RouletteWheel.prototype.updateMembers.mock.calls;
+        expect(update.length).toBe(2);
+        expect(idsOf(update[0])).toEqual(['1', '3', '4', '5']);
+        expect(idsOf(update[1])).toEqual(['1', '3', '4']);
+    });
+
+    describe('後始末', () => {
+        const spyDestroy = cls => {
+            const had = Object.prototype.hasOwnProperty.call(cls.prototype, 'destroy');
+            if (!had) cls.prototype.destroy = function () {};
+            return { spy: jest.spyOn(cls.prototype, 'destroy').mockImplementation(() => {}), had };
+        };
+        const restoreDestroy = (cls, info) => {
+            info.spy.mockRestore();
+            if (!info.had) delete cls.prototype.destroy;
+        };
+
+        test('2回目の animateRoulette で前回のアニメーションが destroy される', async () => {
+            localStorage.setItem('roulette_animation_type', 'wheel');
+            const info = spyDestroy(RouletteWheel);
+            try {
+                await uiController.animateRoulette(members, [members[0]]);
+                const first = uiController.rouletteWheel;
+                expect(first).toBeInstanceOf(RouletteWheel);
+                expect(info.spy).not.toHaveBeenCalled();
+
+                await uiController.animateRoulette(members, [members[1]]);
+                expect(info.spy).toHaveBeenCalledTimes(1);
+                expect(info.spy.mock.contexts[0]).toBe(first);
+                expect(uiController.rouletteWheel).not.toBe(first);
+            } finally {
+                restoreDestroy(RouletteWheel, info);
+            }
+        });
+
+        test('showRouletteScreen で前回のアニメーションが destroy され null になる', async () => {
+            localStorage.setItem('roulette_animation_type', 'wheel');
+            const info = spyDestroy(RouletteWheel);
+            try {
+                await uiController.animateRoulette(members, [members[0]]);
+                expect(uiController.rouletteWheel).not.toBeNull();
+
+                uiController.elements.selectCount = document.createElement('input');
+                uiController.showRouletteScreen(members);
+                expect(info.spy).toHaveBeenCalledTimes(1);
+                expect(uiController.rouletteWheel).toBeNull();
+            } finally {
+                restoreDestroy(RouletteWheel, info);
+            }
+        });
+
+        test('spin 失敗時にフォールバック前に失敗したアニメーションが destroy される', async () => {
+            localStorage.setItem('roulette_animation_type', 'slot');
+            SlotMachineAnimation.prototype.spin.mockImplementation(() => Promise.reject(new Error('fail')));
+            const info = spyDestroy(SlotMachineAnimation);
+            try {
+                await uiController.animateRoulette(members, [members[1]]);
+                expect(info.spy).toHaveBeenCalledTimes(1);
+                expect(uiController.rouletteWheel).toBeInstanceOf(RouletteWheel);
+            } finally {
+                restoreDestroy(SlotMachineAnimation, info);
+            }
+        });
+
+        test('失敗したアニメーションの destroy が例外でもフォールバックは続行される', async () => {
+            localStorage.setItem('roulette_animation_type', 'slot');
+            SlotMachineAnimation.prototype.spin.mockImplementation(() => Promise.reject(new Error('fail')));
+            const info = spyDestroy(SlotMachineAnimation);
+            info.spy.mockImplementation(() => { throw new Error('destroy fail'); });
+            try {
+                await uiController.animateRoulette(members, [members[1]]);
+                expect(info.spy).toHaveBeenCalledTimes(1);
+                expect(uiController.rouletteWheel).toBeInstanceOf(RouletteWheel);
+            } finally {
+                restoreDestroy(SlotMachineAnimation, info);
+            }
+        });
     });
 });

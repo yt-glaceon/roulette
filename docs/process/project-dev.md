@@ -9,6 +9,7 @@ Discord のボイスチャネルのメンバーからランダムに選ぶルー
 - ルート(フロントエンド): 素の JavaScript(ES Modules)+ Vite。`index.html`・`js/`・`css/`。
   - `js/app-controller.js`・`js/ui-controller.js`・`js/roulette-engine.js`・`js/result-manager.js`・`js/discord-client.js`・`js/config.js`
   - `js/animations/` … ルーレット・スロット・ドラムロール・カードめくりの各演出
+    - `animation-timing.js` … 演出の時間配分と停止位置を計算する純粋関数
 - `server/`(バックエンド): Node.js + Express + discord.js。`server/index.js`。依存は `server/package.json` で別管理。
 - `tests/unit/` … Jest(jsdom)+ fast-check のユニットテスト。
 - TypeScript・Lint・型チェックは未導入。

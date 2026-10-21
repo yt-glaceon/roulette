@@ -184,6 +184,10 @@ export class UIController {
 
             // ルーレットホイールコンテナを削除（前回の残骸をクリーンアップ）
             const wheelContainer = document.getElementById('roulette-wheel-container');
+            if (this.rouletteWheel) {
+                this.rouletteWheel.destroy();
+                this.rouletteWheel = null;
+            }
             if (wheelContainer) {
                 wheelContainer.remove();
             }
@@ -583,6 +587,18 @@ export class UIController {
         }
 
     /**
+     * 先頭 count 人の当選者を除いた残りのメンバーを返す（id で比較）
+     * @param {Array} members - 全メンバー
+     * @param {Array} selected - 選出されたメンバー
+     * @param {number} count - 除外する当選者の人数（selected の先頭から）
+     * @returns {Array}
+     */
+    getRemainingMembers(members, selected, count) {
+        const wonIds = new Set(selected.slice(0, count).map(m => m.id));
+        return members.filter(m => !wonIds.has(m.id));
+    }
+
+    /**
      * ルーレットアニメーションを実行
      * @param {Array} members - 全メンバー（除外後）
      * @param {Array} selected - 選出されたメンバー
@@ -616,6 +632,10 @@ export class UIController {
         
         // 既存のアニメーションコンテナを削除
         let animationContainer = document.getElementById('roulette-wheel-container');
+        if (this.rouletteWheel) {
+            this.rouletteWheel.destroy();
+            this.rouletteWheel = null;
+        }
         if (animationContainer) {
             animationContainer.remove();
         }
@@ -663,8 +683,12 @@ export class UIController {
             
             // 各選出メンバーに対してアニメーションを実行
             for (let i = 0; i < selected.length; i++) {
+                // 2回目以降は当選済みのメンバーを盤面から外す
+                if (i >= 1) {
+                    animation.updateMembers(this.getRemainingMembers(members, selected, i));
+                }
                 await animation.spin(selected[i], { duration: animationDuration });
-                
+
                 // 最後のスピン以外は待機
                 if (i < selected.length - 1) {
                     await this.sleep(500);
@@ -676,11 +700,20 @@ export class UIController {
             
         } catch (error) {
             console.error('[UIController] アニメーション実行エラー:', error);
+            // 失敗したアニメーションを破棄する（destroy の例外は握りつぶす）
+            try {
+                if (animation) animation.destroy();
+            } catch (destroyError) {
+                console.error('[UIController] 失敗したアニメーションの破棄エラー:', destroyError);
+            }
             // エラー時は円形ルーレットにフォールバック
             animation = new RouletteWheel(animationContainer);
             animation.initialize(members);
             
             for (let i = 0; i < selected.length; i++) {
+                if (i >= 1) {
+                    animation.updateMembers(this.getRemainingMembers(members, selected, i));
+                }
                 await animation.spin(selected[i], { duration: animationDuration });
                 if (i < selected.length - 1) {
                     await this.sleep(500);

@@ -1,6 +1,42 @@
+import { buildDecelSchedule } from './animation-timing.js';
+
+/** 光が当選カードで止まってから当選カードをめくるまでの時間(ms) */
+const WINNER_FLIP_DELAY = 400;
+/** 当選カードをめくり始めてから残りをめくるまでの時間(ms) */
+const OTHERS_FLIP_DELAY = 300;
+/** 残りをめくり始めてから resolve するまでの時間(ms)。duration 後の合計で約 1.1 秒 */
+const FINISH_DELAY = 400;
+
+/**
+ * 光るカードの順番を事前に一括で決める
+ * - 最後の要素は当選カード
+ * - 直前と同じカードは続けない(2枚以上あるとき)
+ * - 最後から2番目は当選カード以外(2枚以上あるとき。上の規則から自動的に満たされる)
+ * @param {number} cardCount - カード枚数(1 以上)
+ * @param {number} winnerIndex - 当選カードのインデックス
+ * @param {number} steps - 光る回数
+ * @param {Function} [random] - 0 以上 1 未満の乱数を返す関数
+ * @returns {number[]} カードのインデックスの配列(長さ = steps)
+ */
+export function buildHighlightSequence(cardCount, winnerIndex, steps, random = Math.random) {
+    const sequence = new Array(steps);
+    sequence[steps - 1] = winnerIndex;
+    for (let j = steps - 2; j >= 0; j--) {
+        if (cardCount === 1) {
+            sequence[j] = winnerIndex;
+            continue;
+        }
+        // 直後に光るカードを除いた中から選ぶ
+        let pick = Math.floor(random() * (cardCount - 1));
+        if (pick >= sequence[j + 1]) pick += 1;
+        sequence[j] = pick;
+    }
+    return sequence;
+}
+
 /**
  * カードめくりアニメーション
- * 全メンバーをグリッド表示し、ランダムに光らせて選出を演出
+ * 裏向きのカードの上を光が移動して減速し、止まったカードがめくれる
  */
 export class CardFlipAnimation {
     constructor(container) {
@@ -8,6 +44,10 @@ export class CardFlipAnimation {
         this.members = [];
         this.cards = [];
         this.isSpinning = false;
+        this.timers = new Set();
+        this.finishResolve = null;
+        // 直近の spin で使った光る順番(カードのインデックス)
+        this.lastHighlightSequence = [];
     }
 
     /**
@@ -16,31 +56,43 @@ export class CardFlipAnimation {
      */
     initialize(members) {
         this.members = members;
+        this.render();
+    }
+
+    /**
+     * 盤面を渡されたメンバーで作り直す(すべて裏向き・強調なし)
+     * @param {Array} members - 残りのメンバーリスト
+     */
+    updateMembers(members) {
+        this.members = members;
+        this.render();
+    }
+
+    /**
+     * カードグリッドを描画
+     */
+    render() {
         this.cards = [];
-        
-        // コンテナをクリア
         this.container.innerHTML = '';
-        
-        // カードグリッドを作成
+
         const wrapper = document.createElement('div');
         wrapper.className = 'card-flip-wrapper';
-        
+
         const grid = document.createElement('div');
         grid.className = 'card-flip-grid';
-        
-        // 各メンバーのカードを作成
+
         this.members.forEach(member => {
             const card = this.createCard(member);
             grid.appendChild(card.element);
             this.cards.push(card);
         });
-        
+
         wrapper.appendChild(grid);
         this.container.appendChild(wrapper);
     }
 
     /**
-     * カードを作成
+     * カードを作成(表と裏の2面、初期状態は裏向き)
      * @param {Object} member - メンバー情報
      * @returns {Object} カードオブジェクト
      */
@@ -48,10 +100,17 @@ export class CardFlipAnimation {
         const cardElement = document.createElement('div');
         cardElement.className = 'card-flip-item';
         cardElement.dataset.memberId = member.id;
-        
+
+        const inner = document.createElement('div');
+        inner.className = 'card-flip-inner';
+
+        // 表(アバターと名前)
+        const front = document.createElement('div');
+        front.className = 'card-flip-face card-flip-front';
+
         const avatar = document.createElement('div');
         avatar.className = 'card-flip-avatar';
-        
+
         if (member.avatar) {
             const img = document.createElement('img');
             img.src = member.avatar;
@@ -60,14 +119,22 @@ export class CardFlipAnimation {
         } else {
             avatar.textContent = member.displayName.charAt(0).toUpperCase();
         }
-        
+
         const name = document.createElement('div');
         name.className = 'card-flip-name';
         name.textContent = member.displayName;
-        
-        cardElement.appendChild(avatar);
-        cardElement.appendChild(name);
-        
+
+        front.appendChild(avatar);
+        front.appendChild(name);
+
+        // 裏(模様だけ)
+        const back = document.createElement('div');
+        back.className = 'card-flip-face card-flip-back';
+
+        inner.appendChild(front);
+        inner.appendChild(back);
+        cardElement.appendChild(inner);
+
         return {
             element: cardElement,
             member: member
@@ -75,84 +142,122 @@ export class CardFlipAnimation {
     }
 
     /**
-     * カードを強調表示
-     * @param {HTMLElement} cardElement - カード要素
-     * @param {boolean} isSelected - 選出されたかどうか
+     * 全カードを裏向き・強調なしの状態に戻す
      */
-    highlightCard(cardElement, isSelected) {
-        if (isSelected) {
-            cardElement.classList.add('card-flip-selected');
-        } else {
-            cardElement.classList.add('card-flip-highlight');
-            setTimeout(() => {
-                cardElement.classList.remove('card-flip-highlight');
-            }, 200);
-        }
+    resetCards() {
+        this.cards.forEach(card => {
+            card.element.classList.remove(
+                'card-flip-flipped',
+                'card-flip-highlight',
+                'card-flip-selected',
+                'card-flip-unselected'
+            );
+        });
+    }
+
+    /**
+     * タイマーを登録して実行予約する
+     * @param {Function} fn - 実行する処理
+     * @param {number} ms - 待ち時間
+     */
+    schedule(fn, ms) {
+        const id = setTimeout(() => {
+            this.timers.delete(id);
+            fn();
+        }, ms);
+        this.timers.add(id);
+    }
+
+    /**
+     * 走っているタイマーをすべて止める
+     */
+    clearTimers() {
+        this.timers.forEach(id => clearTimeout(id));
+        this.timers.clear();
     }
 
     /**
      * アニメーションを実行
      * @param {Object} selectedMember - 選出されたメンバー
      * @param {Object} options - オプション設定
-     * @param {number} options.duration - アニメーション時間（ミリ秒）
+     * @param {number} options.duration - 光が当選カードで止まるまでの時間(ミリ秒)
      * @returns {Promise<void>}
      */
-    async spin(selectedMember, options = {}) {
-        if (this.isSpinning) return;
-        
+    spin(selectedMember, options = {}) {
+        if (this.isSpinning) return Promise.resolve();
+
         const duration = options.duration || 6000;
+        const winnerIndex = this.cards.findIndex(c => c.member.id === selectedMember.id);
+        if (winnerIndex === -1) {
+            return Promise.reject(new Error('選出されたメンバーがカードに存在しません'));
+        }
+
         this.isSpinning = true;
-        
-        // ランダムな順序でカードを光らせる
-        const shuffledCards = [...this.cards].sort(() => Math.random() - 0.5);
-        const highlightInterval = 100; // 0.1秒間隔
-        const highlightDuration = duration * 0.7; // 全体の70%の時間でハイライト
-        const highlightCount = Math.floor(highlightDuration / highlightInterval);
-        
-        // ランダムハイライトフェーズ
-        for (let i = 0; i < highlightCount; i++) {
-            const card = shuffledCards[i % shuffledCards.length];
-            this.highlightCard(card.element, false);
-            await this.sleep(highlightInterval);
-        }
-        
-        // 選出されたカードを見つける
-        const selectedCard = this.cards.find(c => c.member.id === selectedMember.id);
-        
-        if (selectedCard) {
-            // 選出カードを強調
-            this.highlightCard(selectedCard.element, true);
-            
-            // 非選出カードを半透明化
-            this.cards.forEach(card => {
-                if (card.member.id !== selectedMember.id) {
-                    card.element.classList.add('card-flip-unselected');
-                }
+        this.resetCards();
+
+        const times = buildDecelSchedule(duration, { minInterval: 60, maxInterval: 450 });
+        const sequence = buildHighlightSequence(this.cards.length, winnerIndex, times.length);
+        this.lastHighlightSequence = sequence;
+
+        return new Promise(resolve => {
+            this.finishResolve = resolve;
+
+            // 光の移動
+            times.forEach((time, step) => {
+                this.schedule(() => {
+                    this.cards.forEach(card => card.element.classList.remove('card-flip-highlight'));
+                    this.cards[sequence[step]].element.classList.add('card-flip-highlight');
+                }, time);
             });
-        }
-        
-        // 残りの時間待機
-        const remainingTime = duration - highlightDuration;
-        await this.sleep(remainingTime);
-        
-        this.isSpinning = false;
+
+            // duration で光を当選カードに移して止める(前の光は外す)
+            this.schedule(() => {
+                this.cards.forEach(card => card.element.classList.remove('card-flip-highlight'));
+                this.cards[winnerIndex].element.classList.add('card-flip-highlight');
+            }, duration);
+
+            // 光ったまま見せたあと、当選カードをめくる
+            this.schedule(() => {
+                const winner = this.cards[winnerIndex].element;
+                winner.classList.remove('card-flip-highlight');
+                winner.classList.add('card-flip-flipped', 'card-flip-selected');
+            }, duration + WINNER_FLIP_DELAY);
+
+            // 残りのカードをまとめてめくり、半透明にする
+            this.schedule(() => {
+                this.cards.forEach((card, i) => {
+                    if (i !== winnerIndex) {
+                        card.element.classList.add('card-flip-flipped', 'card-flip-unselected');
+                    }
+                });
+            }, duration + WINNER_FLIP_DELAY + OTHERS_FLIP_DELAY);
+
+            // 演出の終了
+            this.schedule(() => {
+                this.finish();
+            }, duration + WINNER_FLIP_DELAY + OTHERS_FLIP_DELAY + FINISH_DELAY);
+        });
     }
 
     /**
-     * 指定時間待機
-     * @param {number} ms - ミリ秒
+     * spin の終了処理
      */
-    sleep(ms) {
-        return new Promise(resolve => setTimeout(resolve, ms));
+    finish() {
+        this.isSpinning = false;
+        const resolve = this.finishResolve;
+        this.finishResolve = null;
+        if (resolve) resolve();
     }
 
     /**
      * アニメーションを破棄
      */
     destroy() {
-        this.isSpinning = false;
+        this.clearTimers();
+        this.finish();
         if (this.container) {
             this.container.innerHTML = '';
         }
     }
 }
+
