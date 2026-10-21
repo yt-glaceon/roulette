@@ -163,34 +163,34 @@ loop-basic の `process/verification.md`「静的解析・自動チェックの�
 
 ### タスク A: ESLint 導入と既存違反の修正(触るファイル: `package.json`、`package-lock.json`、`eslint.config.js`、`tests/unit/slot-machine.test.js`)
 
-- [ ] A1: `npm install -D eslint@^10 @eslint/js@^10 globals@^17` を実行。`git diff package-lock.json` が eslint 関連の増分のみであること、`@rollup/rollup-linux-x64-gnu` などプラットフォーム別の optional 依存のエントリが lock から消えていないことを確認(Windows 生成 lock と Linux CI の相性)。
-- [ ] A2: `package.json` の scripts に `"lint": "eslint . --max-warnings 0"` を追加。
-- [ ] A3: `eslint.config.js` を新設(上記「ESLint 設定」どおり)。
-- [ ] A4: `npm run lint` を実行し、違反が `tests/unit/slot-machine.test.js:300` の 1 件だけであることを確認(想定と違う件数ならルールを緩めず報告して設計に差し戻す)。
-- [ ] A5: `rafSpy.mockRestore()` を追加して違反を解消。`npm run lint` が 0 件、`npm test` が全件通ることを確認。
-- [ ] A6: ignore の確認。**実行ディレクトリは worktree のルート**(`...\.claude\worktrees\ci-actions`)。親リポジトリ(`C:\Users\temo\Documents\product\roulette`)側では実行しない(親には `.claude/worktrees/` の全コピーがあり、確認の目的が worktree 内の ignore 確認なので不要)。worktree ルートで `npx eslint . -f json` を実行し、出力の各 `filePath` に `.claude/`・`dist/`・`coverage/` を含むパスが 1 つも無いこと(`.claude/` が ignore されていること)を確認する。対象ファイル数が 29 前後であることも併せて見る。
-- [ ] A7: 編集後は `git status --short` で反映を確認([[python-is-store-stub]])。
+- [x] A1: `npm install -D eslint@^10 @eslint/js@^10 globals@^17` を実行。`git diff package-lock.json` が eslint 関連の増分のみであること、`@rollup/rollup-linux-x64-gnu` などプラットフォーム別の optional 依存のエントリが lock から消えていないことを確認(Windows 生成 lock と Linux CI の相性)。
+- [x] A2: `package.json` の scripts に `"lint": "eslint . --max-warnings 0"` を追加。
+- [x] A3: `eslint.config.js` を新設(上記「ESLint 設定」どおり)。
+- [x] A4: `npm run lint` を実行し、違反が `tests/unit/slot-machine.test.js:300` の 1 件だけであることを確認(想定と違う件数ならルールを緩めず報告して設計に差し戻す)。
+- [x] A5: `rafSpy.mockRestore()` を追加して違反を解消。`npm run lint` が 0 件、`npm test` が全件通ることを確認。
+- [x] A6: ignore の確認。**実行ディレクトリは worktree のルート**(`...\.claude\worktrees\ci-actions`)。親リポジトリ(`C:\Users\temo\Documents\product\roulette`)側では実行しない(親には `.claude/worktrees/` の全コピーがあり、確認の目的が worktree 内の ignore 確認なので不要)。worktree ルートで `npx eslint . -f json` を実行し、出力の各 `filePath` に `.claude/`・`dist/`・`coverage/` を含むパスが 1 つも無いこと(`.claude/` が ignore されていること)を確認する。対象ファイル数が 29 前後であることも併せて見る。
+- [x] A7: 編集後は `git status --short` で反映を確認([[python-is-store-stub]])。
 
 ### タスク B: composite action と ci.yml(触るファイル: `.github/actions/verify/action.yml`、`.github/workflows/ci.yml` の新規 2 ファイルのみ)
 
-- [ ] B1: `.github/actions/verify/action.yml` を作成(上記仕様どおり。全 `run` に `shell: bash`、モック混入チェックの終了コード分岐、`dist/index.html` 存在確認を含める)。
-- [ ] B2: `.github/workflows/ci.yml` を作成(トリガー・permissions・concurrency・ジョブ名 `verify`・timeout)。
-- [ ] B3: actionlint を一度実行(Windows ではスクラッチ領域に `rhysd/actionlint` のリリースバイナリを取得して実行。リポジトリには入れない)。composite action の `action.yml` は actionlint の対象外なので、YAML 構文は別途 node 等で読み込めることを確認する。
-- [ ] B4: モック混入チェック部分は、使い捨ての偽 `dist/`(スクラッチ領域)に対してローカルで 5 ケース(クリーン / `*.js` に `【モック】` / `*.html` に `mock-badge` / `assets/` に `mock*` ファイル / `dist` 不在)を流し、期待どおりの終了コードになることを確認。
+- [x] B1: `.github/actions/verify/action.yml` を作成(上記仕様どおり。全 `run` に `shell: bash`、モック混入チェックの終了コード分岐、`dist/index.html` 存在確認を含める)。
+- [x] B2: `.github/workflows/ci.yml` を作成(トリガー・permissions・concurrency・ジョブ名 `verify`・timeout)。
+- [x] B3: actionlint を一度実行(Windows ではスクラッチ領域に `rhysd/actionlint` のリリースバイナリを取得して実行。リポジトリには入れない)。composite action の `action.yml` は actionlint の対象外なので、YAML 構文は別途 node 等で読み込めることを確認する。
+- [x] B4: モック混入チェック部分は、使い捨ての偽 `dist/`(スクラッチ領域)に対してローカルで 5 ケース(クリーン / `*.js` に `【モック】` / `*.html` に `mock-badge` / `assets/` に `mock*` ファイル / `dist` 不在)を流し、期待どおりの終了コードになることを確認。
 
 ### タスク C: deploy.yml 更新(触るファイル: `.github/workflows/deploy.yml` のみ)
 
-- [ ] C1: `pre-deploy-verify` ジョブを追加(job レベル `permissions: contents: read`、checkout@v7 → `uses: ./.github/actions/verify`)。
-- [ ] C2: `build` に `needs: pre-deploy-verify` を追加し、setup-node を `node-version-file: package.json`(+ `check-latest: true`)に変更する。**`cache: 'npm'` は外す**(権限の強い `build` が `pre-deploy-verify` の保存したキャッシュを復元する経路を断つため。上記「deploy.yml の変更」参照)。
-- [ ] C3: 既存 action を checkout@v7、setup-node@v7、configure-pages@v6、upload-pages-artifact@v5、deploy-pages@v5 に更新。
+- [x] C1: `pre-deploy-verify` ジョブを追加(job レベル `permissions: contents: read`、checkout@v7 → `uses: ./.github/actions/verify`)。
+- [x] C2: `build` に `needs: pre-deploy-verify` を追加し、setup-node を `node-version-file: package.json`(+ `check-latest: true`)に変更する。**`cache: 'npm'` は外す**(権限の強い `build` が `pre-deploy-verify` の保存したキャッシュを復元する経路を断つため。上記「deploy.yml の変更」参照)。
+- [x] C3: 既存 action を checkout@v7、setup-node@v7、configure-pages@v6、upload-pages-artifact@v5、deploy-pages@v5 に更新。
 - [x] C4: 各 action の Releases で破壊的変更を確認し、結果を本設計書「action の更新と破壊的変更」表に追記(設計フェーズ中にオーケストレーターが実施済み)。
-- [ ] C5: actionlint を実行。トリガー・全体 `permissions`・`concurrency: pages` が変わっていないこと(diff で確認)。
+- [x] C5: actionlint を実行。トリガー・全体 `permissions`・`concurrency: pages` が変わっていないこと(diff で確認)。
 
 ### タスク D: 文書・設定の更新(触るファイル: `.claude/loop.config.json`、`docs/process/project-dev.md`、`docs/memory/entries/eslint-flat-config-ignores.md`)
 
-- [ ] D1: `.claude/loop.config.json` の `verify.lint` を `npm run lint` に変更。`deployNote` を「main への push で deploy.yml が走り、`pre-deploy-verify`(lint・テスト・ビルド・モック混入チェック)に通った場合のみ GitHub Pages に本番デプロイされる。PR・main push では ci.yml の `verify` が走り、main は PR 必須かつ `verify` 必須(ブランチ保護)。server/ は自動デプロイされない」の趣旨に更新。JSON として有効であること(node で parse)を確認。`worktree.setup` は変更なし。
-- [ ] D2: `docs/process/project-dev.md`: 構成の「TypeScript・Lint・型チェックは未導入」を「TypeScript・型チェックは未導入。Lint は ESLint(`npm run lint`、`eslint.config.js`)」に更新。「検証コマンドの補足」に `npm run lint` と CI(ci.yml の `verify`、composite action `.github/actions/verify`)の説明、必須チェック名 `verify` を変えない注意、モック混入チェックが CI でも自動実行される旨を追記。「注意点」には、**ブランチ保護設定後の運用を先に書く**(`gh pr checks --watch` で CI 緑を待ってから `gh pr merge`、または `--auto`。緊急時のみ `--admin`)。運用記述は保護設定後の状態を前提に先に書く。実際の設定値が設計と食い違った場合のみ、E5 の小 PR で直す。
-- [ ] D3: `docs/memory/entries/eslint-flat-config-ignores.md` の「背景」を「実測で eslint@10 + recommended の違反は 1 件(`no-unused-vars`)のみだった」に更新し、`updated` を当日に。`related_topics` は既に `ci-actions` を含む(追記不要)。
+- [x] D1: `.claude/loop.config.json` の `verify.lint` を `npm run lint` に変更。`deployNote` を「main への push で deploy.yml が走り、`pre-deploy-verify`(lint・テスト・ビルド・モック混入チェック)に通った場合のみ GitHub Pages に本番デプロイされる。PR・main push では ci.yml の `verify` が走り、main は PR 必須かつ `verify` 必須(ブランチ保護)。server/ は自動デプロイされない」の趣旨に更新。JSON として有効であること(node で parse)を確認。`worktree.setup` は変更なし。
+- [x] D2: `docs/process/project-dev.md`: 構成の「TypeScript・Lint・型チェックは未導入」を「TypeScript・型チェックは未導入。Lint は ESLint(`npm run lint`、`eslint.config.js`)」に更新。「検証コマンドの補足」に `npm run lint` と CI(ci.yml の `verify`、composite action `.github/actions/verify`)の説明、必須チェック名 `verify` を変えない注意、モック混入チェックが CI でも自動実行される旨を追記。「注意点」には、**ブランチ保護設定後の運用を先に書く**(`gh pr checks --watch` で CI 緑を待ってから `gh pr merge`、または `--auto`。緊急時のみ `--admin`)。運用記述は保護設定後の状態を前提に先に書く。実際の設定値が設計と食い違った場合のみ、E5 の小 PR で直す。
+- [x] D3: `docs/memory/entries/eslint-flat-config-ignores.md` の「背景」を「実測で eslint@10 + recommended の違反は 1 件(`no-unused-vars`)のみだった」に更新し、`updated` を当日に。`related_topics` は既に `ci-actions` を含む(追記不要)。
 
 ### タスク E: 統合検証(A〜D のマージ後、メインまたは tester。順序依存)
 
