@@ -184,6 +184,10 @@ export class UIController {
 
             // ルーレットホイールコンテナを削除（前回の残骸をクリーンアップ）
             const wheelContainer = document.getElementById('roulette-wheel-container');
+            if (this.rouletteWheel) {
+                this.rouletteWheel.destroy();
+                this.rouletteWheel = null;
+            }
             if (wheelContainer) {
                 wheelContainer.remove();
             }
@@ -628,6 +632,10 @@ export class UIController {
         
         // 既存のアニメーションコンテナを削除
         let animationContainer = document.getElementById('roulette-wheel-container');
+        if (this.rouletteWheel) {
+            this.rouletteWheel.destroy();
+            this.rouletteWheel = null;
+        }
         if (animationContainer) {
             animationContainer.remove();
         }
@@ -692,6 +700,12 @@ export class UIController {
             
         } catch (error) {
             console.error('[UIController] アニメーション実行エラー:', error);
+            // 失敗したアニメーションを破棄する（destroy の例外は握りつぶす）
+            try {
+                if (animation) animation.destroy();
+            } catch (destroyError) {
+                console.error('[UIController] 失敗したアニメーションの破棄エラー:', destroyError);
+            }
             // エラー時は円形ルーレットにフォールバック
             animation = new RouletteWheel(animationContainer);
             animation.initialize(members);

@@ -536,4 +536,77 @@ describe('UIController - animateRoulette の updateMembers 呼び出し', () => 
         expect(idsOf(update[0])).toEqual(['1', '3', '4', '5']);
         expect(idsOf(update[1])).toEqual(['1', '3', '4']);
     });
+
+    describe('後始末', () => {
+        const spyDestroy = cls => {
+            const had = Object.prototype.hasOwnProperty.call(cls.prototype, 'destroy');
+            if (!had) cls.prototype.destroy = function () {};
+            return { spy: jest.spyOn(cls.prototype, 'destroy').mockImplementation(() => {}), had };
+        };
+        const restoreDestroy = (cls, info) => {
+            info.spy.mockRestore();
+            if (!info.had) delete cls.prototype.destroy;
+        };
+
+        test('2回目の animateRoulette で前回のアニメーションが destroy される', async () => {
+            localStorage.setItem('roulette_animation_type', 'wheel');
+            const info = spyDestroy(RouletteWheel);
+            try {
+                await uiController.animateRoulette(members, [members[0]]);
+                const first = uiController.rouletteWheel;
+                expect(first).toBeInstanceOf(RouletteWheel);
+                expect(info.spy).not.toHaveBeenCalled();
+
+                await uiController.animateRoulette(members, [members[1]]);
+                expect(info.spy).toHaveBeenCalledTimes(1);
+                expect(info.spy.mock.contexts[0]).toBe(first);
+                expect(uiController.rouletteWheel).not.toBe(first);
+            } finally {
+                restoreDestroy(RouletteWheel, info);
+            }
+        });
+
+        test('showRouletteScreen で前回のアニメーションが destroy され null になる', async () => {
+            localStorage.setItem('roulette_animation_type', 'wheel');
+            const info = spyDestroy(RouletteWheel);
+            try {
+                await uiController.animateRoulette(members, [members[0]]);
+                expect(uiController.rouletteWheel).not.toBeNull();
+
+                uiController.elements.selectCount = document.createElement('input');
+                uiController.showRouletteScreen(members);
+                expect(info.spy).toHaveBeenCalledTimes(1);
+                expect(uiController.rouletteWheel).toBeNull();
+            } finally {
+                restoreDestroy(RouletteWheel, info);
+            }
+        });
+
+        test('spin 失敗時にフォールバック前に失敗したアニメーションが destroy される', async () => {
+            localStorage.setItem('roulette_animation_type', 'slot');
+            SlotMachineAnimation.prototype.spin.mockImplementation(() => Promise.reject(new Error('fail')));
+            const info = spyDestroy(SlotMachineAnimation);
+            try {
+                await uiController.animateRoulette(members, [members[1]]);
+                expect(info.spy).toHaveBeenCalledTimes(1);
+                expect(uiController.rouletteWheel).toBeInstanceOf(RouletteWheel);
+            } finally {
+                restoreDestroy(SlotMachineAnimation, info);
+            }
+        });
+
+        test('失敗したアニメーションの destroy が例外でもフォールバックは続行される', async () => {
+            localStorage.setItem('roulette_animation_type', 'slot');
+            SlotMachineAnimation.prototype.spin.mockImplementation(() => Promise.reject(new Error('fail')));
+            const info = spyDestroy(SlotMachineAnimation);
+            info.spy.mockImplementation(() => { throw new Error('destroy fail'); });
+            try {
+                await uiController.animateRoulette(members, [members[1]]);
+                expect(info.spy).toHaveBeenCalledTimes(1);
+                expect(uiController.rouletteWheel).toBeInstanceOf(RouletteWheel);
+            } finally {
+                restoreDestroy(SlotMachineAnimation, info);
+            }
+        });
+    });
 });
