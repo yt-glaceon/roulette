@@ -203,4 +203,11 @@ describe('CardFlipAnimation', () => {
         await jest.advanceTimersByTimeAsync(5000);
         expect(container.innerHTML).toBe('');
     });
+
+    test('当選者が members にいないと reject され、isSpinning は立たない', async () => {
+        const { animation } = setup(4);
+        await expect(animation.spin({ id: 'unknown', displayName: 'X' }, { duration: 1000 }))
+            .rejects.toThrow('選出されたメンバーがカードに存在しません');
+        expect(animation.isSpinning).toBe(false);
+    });
 });

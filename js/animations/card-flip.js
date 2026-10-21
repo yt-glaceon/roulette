@@ -186,7 +186,9 @@ export class CardFlipAnimation {
 
         const duration = options.duration || 6000;
         const winnerIndex = this.cards.findIndex(c => c.member.id === selectedMember.id);
-        if (winnerIndex === -1) return Promise.resolve();
+        if (winnerIndex === -1) {
+            return Promise.reject(new Error('選出されたメンバーがカードに存在しません'));
+        }
 
         this.isSpinning = true;
         this.resetCards();
