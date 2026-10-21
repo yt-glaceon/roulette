@@ -2,7 +2,7 @@
 
 - 日付: 2026-10-21
 - ステータス: 完了
-- 関連する設計ドキュメント: (作成後にリンクを追記)
+- 関連する設計ドキュメント: [docs/designs/2026-10-21-roulette-animation-behavior.md](../designs/2026-10-21-roulette-animation-behavior.md)
 
 ## 背景・目的
 

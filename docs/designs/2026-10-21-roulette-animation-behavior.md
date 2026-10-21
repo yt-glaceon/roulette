@@ -1,10 +1,10 @@
 # 設計: ルーレット各方式のアニメーションを一般的な挙動に寄せる
 
 - 日付: 2026-10-21
-- ステータス: レビュー待ち
+- ステータス: 承認済み
 - 対応する調査ドキュメント: [docs/investigations/2026-10-21-roulette-animation-behavior.md](../investigations/2026-10-21-roulette-animation-behavior.md)
-- 承認者: (承認ゲート通過時に記入)
-- 承認日: (承認ゲート通過時に記入)
+- 承認者: yt-glaceon
+- 承認日: 2026-10-21
 
 ## 目的・スコープ
 
@@ -287,3 +287,4 @@ CSS transition 1本の方式をやめ、`requestAnimationFrame` で各列の位�
 
 | 日時 | 判断 | コメント |
 | --- | --- | --- |
+| 2026-10-21 | 承認 | 設計レビュー2ラウンドPASS、未解決MAJORなしで提示 |
