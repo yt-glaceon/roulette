@@ -1,0 +1,16 @@
+---
+name: worktree-server-env-live-token
+type: pitfall
+status: active
+related_topics: [node24-upgrade]
+created: 2026-10-21
+updated: 2026-10-21
+---
+
+ワークツリーには `worktree.copyFiles` で本番の `server/.env`(実 Bot トークン)がコピーされる。`server/index.js` は `dotenv.config()` で cwd の `.env` を読むため、`server/` を cwd にして起動すると Render の本番 Bot と同じトークンで二重ログインし、`/roulette` の応答やトークンの保存先が分かれる。エージェントが起動確認するときは `.env` の無いディレクトリを cwd にし、`DISCORD_BOT_TOKEN` を空にする(Git Bash で `DISCORD_BOT_TOKEN= node <worktree>/server/index.js`)。実トークンでの確認は人間が Render を Suspend してから行う。
+
+**背景:** node24-upgrade の設計レビューで判明(`docs/designs/2026-10-21-node24-upgrade.md` の設計レビュー結果)。
+
+**適用範囲:** server/ を変更するトピックのテスト・手動確認の設計と実施。
+
+**関連:** [[render-node-version]]

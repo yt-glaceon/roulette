@@ -22,6 +22,8 @@
 - [absolute-stacked-faces-height](entries/absolute-stacked-faces-height.md) — 2面とも absolute で重ねると高さが伸びない。片面を通常の流れに置く。長い名前のモックで確認
 - [python-is-store-stub](entries/python-is-store-stub.md) — Bash の python は Store のスタブで何も実行されない。編集は Edit か node で、git status で反映を確かめる
 - [jest-esm-globals](entries/jest-esm-globals.md) — ESM 実行の Jest では jest がグローバルに無い。@jest/globals から import し、モックは prototype の spyOn で
+- [render-node-version](entries/render-node-version.md) — Render の Node 指定は NODE_VERSION > .node-version > .nvmrc > engines。変えたらデプロイログで実際の版を確かめる
+- [worktree-server-env-live-token](entries/worktree-server-env-live-token.md) — ワークツリーの server/.env は本番トークン。server/ を cwd に起動すると本番 Bot と二重ログインする
 
 ## glossary(プロジェクト固有の用語集)
 
