@@ -32,6 +32,8 @@
 - `url` … `https://discord.com/api/v10/interactions/<interaction id>/<interaction token>/callback`。インタラクショントークン(15分間、そのインタラクションへの応答・フォローアップの送信に使える)を含む
 - `requestBody.json.data.content` … 返信本文。`${rouletteUrl}` = `FRONTEND_URL?token=<アクセストークン全文>` を含む
 
+(テストフェーズでの追記: 本物の `DiscordAPIError` で再現したところ、Node の既定の表示深さでは `requestBody.json.data` が `[Object]` に省略され、content のアクセストークンまでは出なかった。確実に出るのは `url` のインタラクショントークン。content が出るかは表示深さの設定や構造に依存する。詳細は [テストレポート](../tests/2026-10-22-token-log-masking.md)。)
+
 `interaction.reply` が失敗してもトークンは `accessTokens` に保存済みで有効なため、97行目を直してもこの経路でアクセストークンが残りうる。普段は起きない(3秒の応答期限切れ・Discord 障害時など)が、起きたときに残るのは全文。
 
 さらに、catch 内の `interaction.reply`(100行目)が再び失敗すると、`client.on` のハンドラから例外が漏れて unhandled rejection になり、Node 24 の既定ではプロセスが落ちる(そのときのスタック出力にも同じ `DiscordAPIError` が出る)。機密値の観点では同じ問題なので、あわせて扱う。
