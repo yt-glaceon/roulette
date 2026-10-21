@@ -1,0 +1,74 @@
+name: verify
+description: lint・テスト・ビルド・モック混入チェックをまとめて実行する(呼び出し側で actions/checkout を先に実行すること)
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Node
+      uses: actions/setup-node@v7
+      with:
+        node-version-file: package.json
+        check-latest: true
+        cache: npm
+        cache-dependency-path: |
+          package-lock.json
+          server/package-lock.json
+
+    - name: Install dependencies (root)
+      shell: bash
+      run: npm ci
+
+    - name: Install dependencies (server)
+      shell: bash
+      run: npm ci --prefix server
+
+    - name: Lint
+      shell: bash
+      run: npm run lint
+
+    - name: Check server syntax
+      shell: bash
+      run: node --check server/index.js
+
+    - name: Test
+      shell: bash
+      run: npm test
+
+    - name: Build
+      shell: bash
+      run: npm run build
+      env:
+        VITE_API_URL: https://example.invalid
+
+    - name: Check mock leakage in dist
+      shell: bash
+      run: |
+        if [ ! -f dist/index.html ]; then
+          echo "::error::dist/index.html が存在しません(ビルドが空または失敗)"
+          exit 1
+        fi
+
+        set +e
+        matches=$(grep -rlE --include='*.js' --include='*.html' '【モック】|mock-badge' dist)
+        code=$?
+        set -e
+        if [ "$code" -eq 0 ]; then
+          echo "::error::dist にモック表示が混入しています"
+          echo "$matches"
+          exit 1
+        elif [ "$code" -ne 1 ]; then
+          echo "::error::grep がエラー終了しました(終了コード $code)"
+          exit 1
+        fi
+
+        if [ ! -d dist/assets ]; then
+          echo "::error::dist/assets が存在しません"
+          exit 1
+        fi
+        mock_files=$(find dist/assets -iname '*mock*')
+        if [ -n "$mock_files" ]; then
+          echo "::error::dist/assets にモック名のファイルが混入しています"
+          echo "$mock_files"
+          exit 1
+        fi
+        echo "モック混入なし"
