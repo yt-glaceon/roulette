@@ -2,7 +2,7 @@
 name: jest-esm-globals
 type: pitfall
 status: active
-related_topics: [roulette-animation-behavior]
+related_topics: [roulette-animation-behavior, ci-actions]
 created: 2026-10-21
 updated: 2026-10-21
 ---
