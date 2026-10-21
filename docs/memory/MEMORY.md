@@ -17,6 +17,7 @@
 ## pitfall(既知の落とし穴・失敗から得た教訓)
 
 <!-- 例: - [ci-no-network](entries/ci-no-network.md) — CI環境は外部ネットワークにアクセスできない、モック必須 -->
+- [import-meta-env-in-jest](entries/import-meta-env-in-jest.md) — Jest では import.meta.env が undefined。env 参照はエントリポイントに寄せ、ロジックは切り出す
 
 ## glossary(プロジェクト固有の用語集)
 
