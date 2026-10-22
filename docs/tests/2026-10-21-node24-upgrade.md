@@ -92,7 +92,7 @@ Node.js v24.13.1
 
 デプロイ後の確認結果(2026-10-21〜22、マージコミット 43cb53b):
 
-1. GitHub Actions(run 39625601391、成功): `Setup Node.js` は `Attempting to download 24.22.0...` / `node: v24.22.0`。`check-latest: true` でも 24.22.1 ではなかった(setup-node の配布元に修正版がまだ無いとみられる)。**追跡事項**: 次回以降の実行で 24.22.1 以降になることを確認する。ビルド時のみの利用で本番は静的配信のため実害は小さい。なお GitHub の障害(Delays for Pull Requests and Webhook deliveries)で、実行はマージから約 20 分遅れた。
+1. GitHub Actions(run 39625601391、成功): `Setup Node.js` は `Attempting to download 24.22.0...` / `node: v24.22.0`。`check-latest: true` でも 24.22.1 ではなかった(setup-node の配布元に修正版がまだ無いとみられる)。**追跡事項(2026-10-22 解消)**: 次回以降の実行で 24.22.1 以降になることを確認する → actions/node-versions に 24.22.1 が追加され、run 39630742268(b44086e、2026-10-21 15:59 UTC)以降は `node: v24.22.1` になった(run 39635767028 / d4ea23a も同じ)。ビルド時のみの利用で本番は静的配信のため実害は小さい。なお GitHub の障害(Delays for Pull Requests and Webhook deliveries)で、実行はマージから約 20 分遅れた。
 2. Render の自動デプロイは走らなかった(GitHub の Webhook 遅延障害と重なったとみられる)。ユーザーが Manual Deploy し、デプロイ対象が 43cb53b であることを確認。
 3. デプロイログ: `==> Requesting Node.js version 24.x` / `==> Using Node.js version 24.22.1 via /opt/render/project/src/server/package.json`。engines が読まれ、修正版 24.22.1 になった。`npm install` の audit は `found 0 vulnerabilities`。
 4. `NODE_VERSION` は未設定のまま(設定不要だった)。
@@ -133,7 +133,7 @@ express 4.22.3 / qs 6.16.1 での実 API 応答(path-to-regexp、qs のクエリ
 
 ## 総合判定
 
-**最終: 合格**(ローカル起動確認、デプロイ後確認とも完了。追跡事項は GitHub Actions の Node が 24.22.0 だった点のみ)。
+**最終: 合格**(ローカル起動確認、デプロイ後確認とも完了。追跡事項だった GitHub Actions の Node も 2026-10-22 に v24.22.1 になったことを確認し、解消。Render の稼働中デプロイ b44086e も `Using Node.js version 24.22.1 via .../server/package.json`)。
 
 エージェントで確認できる範囲: 合格(初回テストおよびステップ9後の再テストとも、Node v24.13.1 で問題なし)。ステップ9後は server の `npm audit` が 0 件(critical / high / moderate いずれも無し)になった。
 

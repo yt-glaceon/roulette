@@ -15,6 +15,4 @@ Render の server サービスは Root Directory が `server` なので、`serve
 
 **適用範囲:** server/ を変更するトピックのリリース・デプロイ後確認。Render の自動デプロイが走らないときの切り分け。
 
-**適用範囲:** server/ を変更するトピックのリリース・デプロイ後確認。Render の自動デプロイが走らないときの切り分け。
-
 **関連:** [[render-node-version]]
