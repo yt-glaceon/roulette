@@ -273,6 +273,7 @@ CI では lint → `node --check server/index.js` → テスト → ビルド �
 
 ### CORS エラー
 - フロントエンドを開いているオリジンが `server/index.js` の `allowedOrigins` に含まれているか確認（`FRONTEND_URL` は CORS には使われません）
+- オリジンはスキーム・ホスト・ポートまで完全一致で判定します（末尾に `/` を付けない。大文字小文字やポート・スキームの違いも不一致）
 - 別のオリジンで公開する場合は `allowedOrigins` に追加
 
 ### Bot が返す URL が違う場所を指す
@@ -283,7 +284,7 @@ CI では lint → `node --check server/index.js` → テスト → ビルド �
 - トークンベースのアクセス制御
 - トークンは1時間で自動失効
 - 期限切れトークンは自動削除
-- CORS で許可するオリジンを制限（`server/index.js` の `allowedOrigins`）
+- ブラウザからのクロスオリジンアクセスを、`server/index.js` の `allowedOrigins` と完全一致するオリジンに制限
 - アクセストークンは URL ではなくヘッダで API に送り、サーバーのログには全文を出さない（`server/log-safe.js`）
 - Bot トークンは環境変数で管理
 

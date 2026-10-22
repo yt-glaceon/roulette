@@ -85,10 +85,10 @@ app.use(cors({
 
 ## 実装ステップ
 
-- [ ] ステップ1: `server/cors-origin.js` を新規作成(`isAllowedOrigin`)
-- [ ] ステップ2: `tests/unit/server-cors-origin.test.js` を新規作成(下記テスト戦略のケース)
-- [ ] ステップ3: `server/index.js` の CORS 設定を `isAllowedOrigin` を使う形に置き換える(`allowedOrigins` は残す)
-- [ ] ステップ4: README.md・server/README.md・SETUP.md の CORS の記述を直す
+- [x] ステップ1: `server/cors-origin.js` を新規作成(`isAllowedOrigin`)
+- [x] ステップ2: `tests/unit/server-cors-origin.test.js` を新規作成(下記テスト戦略のケース)
+- [x] ステップ3: `server/index.js` の CORS 設定を `isAllowedOrigin` を使う形に置き換える(`allowedOrigins` は残す)
+- [x] ステップ4: README.md・server/README.md・SETUP.md の CORS の記述を直す
 
 ステップ1〜3は同じ担当でまとめて実装してよい(テストが関数に依存し、index.js も関数に依存する)。ステップ4は独立しているので並列にできる。
 

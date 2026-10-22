@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder } from 'discord.js';
 import crypto from 'crypto';
 import { maskToken, describeError } from './log-safe.js';
+import { isAllowedOrigin } from './cors-origin.js';
 
 dotenv.config();
 
@@ -122,6 +123,7 @@ setInterval(() => {
 }, 60000); // 1分ごと
 
 // CORS 設定
+// 許可リストはブラウザが送る Origin と同じ形（スキーム://ホスト[:ポート]、末尾 `/` なし）で書く。完全一致で判定する
 const allowedOrigins = [
   'https://yt-glaceon.github.io',
   'http://localhost:5500',
@@ -130,8 +132,8 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: (origin, callback) => {
-    // オリジンが許可リストに含まれているか、またはオリジンがない場合（同一オリジンリクエスト）
-    if (!origin || allowedOrigins.some(allowed => origin.startsWith(allowed))) {
+    // Origin ヘッダが無いリクエスト（ヘルスチェック・curl）は許可し、それ以外は allowedOrigins と完全一致するものだけ許可する
+    if (isAllowedOrigin(origin, allowedOrigins)) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
