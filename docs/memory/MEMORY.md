@@ -21,10 +21,10 @@
 - [same-tick-visual-state](entries/same-tick-visual-state.md) — 同じ tick で付けて外した見た目の状態は描画されない。確定の瞬間は時間をずらして見せる
 - [absolute-stacked-faces-height](entries/absolute-stacked-faces-height.md) — 2面とも absolute で重ねると高さが伸びない。片面を通常の流れに置く。長い名前のモックで確認
 - [python-is-store-stub](entries/python-is-store-stub.md) — Bash の python は Store のスタブで何も実行されない。編集は Edit か node で、git status で反映を確かめる
-- [jest-esm-globals](entries/jest-esm-globals.md) — ESM 実行の Jest では jest がグローバルに無い。@jest/globals から import し、モックは prototype の spyOn で
+- [jest-esm-globals](entries/jest-esm-globals.md) — ESM 実行の Jest では jest がグローバルに無い。@jest/globals から import し、モックは prototype の spyOn で(Skill 化済み: .claude/skills/jest-esm-tests)
 - [render-node-version](entries/render-node-version.md) — Render の Node 指定は NODE_VERSION > .node-version > .nvmrc > engines。変えたらデプロイログで実際の版を確かめる
 - [render-root-dir-autodeploy](entries/render-root-dir-autodeploy.md) — Render は server/ を変えたコミットだけ自動デプロイする(Webhook が遅れることあり)。まず差分に server/ があるか見る
-- [worktree-server-env-live-token](entries/worktree-server-env-live-token.md) — ワークツリーの server/.env は本番トークン。server/ を cwd に起動すると本番 Bot と二重ログインする。確認はダミートークン + --unhandled-rejections=warn で
+- [worktree-server-env-live-token](entries/worktree-server-env-live-token.md) — ワークツリーの server/.env は本番トークン。server/ を cwd に起動すると本番 Bot と二重ログインする。確認はダミートークン + --unhandled-rejections=warn で(Skill 化済み: .claude/skills/server-dummy-token-run)
 - [express-qs-pinned-audit](entries/express-qs-pinned-audit.md) — express@4.22.1 が qs 6.14.2 を固定し、audit fix 後も qs の moderate が 1 件残る。`npm update express --package-lock-only` で直る(確認前に npm ci)
 - [eslint-flat-config-ignores](entries/eslint-flat-config-ignores.md) — ESLint flat config は .gitignore を読まない。dist/coverage/.claude を globalIgnores で明示。v10 は recommended に 3 ルール追加
 - [discordjs-error-leaks-request](entries/discordjs-error-leaks-request.md) — DiscordAPIError をそのまま console.error すると url のインタラクショントークンがログに出る(requestBody の本文も表示深さ次第で出る)

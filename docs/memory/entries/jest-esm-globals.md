@@ -1,10 +1,10 @@
 ---
 name: jest-esm-globals
 type: pitfall
-status: active
-related_topics: [roulette-animation-behavior, ci-actions]
+status: promoted-to-skill
+related_topics: [roulette-animation-behavior, ci-actions, cors-exact-match]
 created: 2026-10-21
-updated: 2026-10-21
+updated: 2026-10-22
 ---
 
 このリポジトリの Jest は `node --experimental-vm-modules` の ESM 実行なので、`jest` がグローバルに無い。`jest.spyOn`・`jest.fn`・`jest.useFakeTimers` を使うテストでは `import { jest } from '@jest/globals'` を書く。`jest.mock` も ESM では効きにくいので、クラスの差し替えは prototype への `jest.spyOn` が確実。
@@ -16,3 +16,5 @@ fake timers は `Date.now` も偽装するので、時刻ベースのスケジ�
 **適用範囲:** `tests/unit/` に spy・モック・fake timers を使うテストを書くとき。
 
 **関連:** [[import-meta-env-in-jest]]
+
+**Skill 化:** `.claude/skills/jest-esm-tests/SKILL.md`(2026-10-22、cors-exact-match のゲート1で承認)

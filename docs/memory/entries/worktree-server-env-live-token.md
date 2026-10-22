@@ -1,8 +1,8 @@
 ---
 name: worktree-server-env-live-token
 type: pitfall
-status: active
-related_topics: [node24-upgrade, token-log-masking]
+status: promoted-to-skill
+related_topics: [node24-upgrade, token-log-masking, cors-exact-match]
 created: 2026-10-21
 updated: 2026-10-22
 ---
@@ -14,3 +14,5 @@ updated: 2026-10-22
 **適用範囲:** server/ を変更するトピックのテスト・手動確認の設計と実施。
 
 **関連:** [[render-node-version]]
+
+**Skill 化:** `.claude/skills/server-dummy-token-run/SKILL.md`(2026-10-22、cors-exact-match のゲート1で承認)
