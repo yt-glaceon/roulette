@@ -2,7 +2,7 @@
 name: render-root-dir-autodeploy
 type: pitfall
 status: active
-related_topics: [node24-upgrade, token-log-masking]
+related_topics: [node24-upgrade, token-log-masking, readme-refresh]
 created: 2026-10-22
 updated: 2026-10-22
 ---

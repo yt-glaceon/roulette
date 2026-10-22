@@ -4,8 +4,9 @@ Discord のボイスチャネルに参加しているメンバーから指定人
 
 ## 特徴
 
-- 🎰 円グラフ型のルーレットアニメーション（6秒間回転）
-- 🎯 白線回避機能（針がセクション中央に停止）
+- 🎰 4 種類の演出（円形ルーレット・スロットマシン・カードめくり・ドラムロール）
+- ⏱️ 1 人あたりの演出時間を 3〜10 秒で調整（初期値 6 秒）
+- 🎯 白線回避機能（円形ルーレットで針がセクション中央に停止）
 - 🚫 参加者除外機能（チェックボックスで除外）
 - 🎭 ランダムロール付与機能（役職をシャッフル割り当て）
 - 🔒 Discord スラッシュコマンドによるアクセス制御
@@ -49,10 +50,11 @@ https://your-app.github.io?token=abc123...
 3. 除外したいメンバーがいる場合、チェックボックスで除外
 4. 選出人数を入力
 5. （オプション）ロール入力欄に役職を入力（ランダム割り当て）
-6. 「ルーレット開始」をクリック
-7. 円グラフ型のルーレットが6秒間回転
-8. 針が選出されたメンバーを順に指す
-9. 結果が表示される（ロール付き）
+6. アニメーション方式（円形ルーレット・スロットマシン・カードめくり・ドラムロール）を選ぶ
+7. 1 人あたりのアニメーション時間（3〜10 秒）を選ぶ
+8. 「ルーレット開始」をクリック
+9. 選んだ方式の演出で、選出されたメンバーが順に決まる
+10. 「結果を見る」をクリックすると結果が表示される（ロール付き）
 
 ## セットアップ
 
@@ -88,8 +90,15 @@ https://your-app.github.io?token=abc123...
 ```bash
 cd server
 npm install
-cp .env.example .env
-# .env ファイルを編集して DISCORD_BOT_TOKEN を設定
+```
+
+`server/.env` を作成して次の変数を設定してください。
+
+- `DISCORD_BOT_TOKEN`: Bot トークン
+- `PORT`: サーバーのポート（省略時は 3000）
+- `FRONTEND_URL`: 開発時は `http://localhost:5500`
+
+```bash
 npm run dev
 ```
 
@@ -107,7 +116,9 @@ cp .env.example .env
 npm run dev
 ```
 
-ブラウザで `http://localhost:5500` にアクセス
+ブラウザで `http://localhost:5500/roulette/` にアクセス
+
+Discord なしで画面を確認するには `http://localhost:5500/roulette/?mock`（プリセットのチャネル）、または `?mock=12`（12 人のチャネルを先頭に追加。1〜100）を開きます。開発サーバー専用で、本番ビルドでは無効です。
 
 ### 5. Render へのデプロイ
 
@@ -122,8 +133,10 @@ npm run dev
    - **Start Command**: `npm start`
 5. 環境変数を設定:
    - `DISCORD_BOT_TOKEN`: Bot トークン
-   - `FRONTEND_URL`: GitHub Pages の URL
+   - `FRONTEND_URL`: `https://yt-glaceon.github.io/roulette`（Bot が返す URL の先頭部分）
 6. 「Create Web Service」をクリック
+
+初回作成後は、`server/` を変更したコミットが `main` にマージされると Render に自動デプロイされます（Webhook が遅れて数分〜数十分かかることがあります）。`server/` の外だけの変更ではデプロイされません。
 
 Node バージョンの指定と確認は `server/README.md` を参照。
 
@@ -144,14 +157,34 @@ Node バージョンの指定と確認は `server/README.md` を参照。
 
 #### 6.3 デプロイ
 
-```bash
-git add .
-git commit -m "Setup Vite and environment variables"
-git push origin main
-```
-
-プッシュすると自動的にビルド＆デプロイが実行されます。
+変更の流れは「開発」節を参照。PR を `main` にマージすると `deploy.yml` が走り、デプロイ前検証に通った場合だけ GitHub Pages にデプロイされます。
 Actions タブでデプロイの進行状況を確認できます。
+
+## 開発
+
+ルートディレクトリで実行するコマンドです。
+
+| コマンド | 内容 |
+| --- | --- |
+| `npm test` | Jest でテストを実行（ES Modules のため `--experimental-vm-modules` 付きで実行されます） |
+| `npm run test:watch` | テストを監視モードで実行 |
+| `npm run test:coverage` | カバレッジ付きでテストを実行 |
+| `npm run lint` | ESLint を実行（警告 0 件が必要） |
+| `npm run build` | 本番ビルド（`dist/` に出力） |
+| `npm run preview` | ビルド結果をローカルで確認 |
+
+`server/` に独自のテストスクリプトは無く、`server/log-safe.js` のテストはルートの `npm test` に含まれます（`tests/unit/server-log-safe.test.js`）。
+
+### 変更の流れ
+
+`main` はブランチ保護により PR 必須で、CI の `verify` が通るまでマージできません（直接プッシュはできません）。
+
+1. `main` から作業ブランチを切って変更する
+2. PR を作ると CI（`.github/workflows/ci.yml` の `verify`）が走る
+3. `verify` が通ったら PR をマージする
+4. `main` へのマージで `deploy.yml` が走り、デプロイ前検証（`pre-deploy-verify`、CI と同じ検証）に通った場合だけ GitHub Pages にデプロイされる
+
+CI では lint → `node --check server/index.js` → テスト → ビルド → 本番ビルドにモックが混入していないかの確認を順に実行します（`.github/actions/verify`）。
 
 ## 技術スタック
 
@@ -166,40 +199,62 @@ Actions タブでデプロイの進行状況を確認できます。
 - Canvas API（ルーレットアニメーション）
 - GitHub Pages（ホスティング）
 
+### 開発ツール
+- Vite
+- Jest（jsdom）+ fast-check
+- ESLint
+- GitHub Actions
+
 ## プロジェクト構造
 
 ```
 .
-├── index.html              # メインHTML
+├── index.html               # メインHTML
 ├── css/
-│   └── style.css          # スタイルシート
+│   └── style.css            # スタイルシート
 ├── js/
-│   ├── app-controller.js  # アプリケーションコントローラー
-│   ├── config.js          # 設定ファイル
-│   ├── discord-client.js  # Discord APIクライアント
-│   ├── roulette-engine.js # ルーレットロジック
-│   ├── roulette-wheel.js  # ルーレットアニメーション
-│   ├── ui-controller.js   # UI制御
-│   └── result-manager.js  # 結果管理
-├── server/                # バックエンドサーバー
-│   ├── index.js          # サーバーエントリーポイント
-│   ├── package.json      # 依存関係
-│   └── README.md         # サーバードキュメント
-└── README.md             # このファイル
+│   ├── app-controller.js    # アプリケーションコントローラー
+│   ├── api-request.js       # API リクエストの組み立て(x-access-token ヘッダ)
+│   ├── config.js            # 設定ファイル
+│   ├── discord-client.js    # Discord APIクライアント
+│   ├── roulette-engine.js   # ルーレットロジック
+│   ├── ui-controller.js     # UI制御
+│   ├── result-manager.js    # 結果管理
+│   ├── animations/          # 演出(円形ルーレット・スロットマシン・カードめくり・ドラムロール、時間配分の計算)
+│   └── dev/                 # 開発サーバー専用のモック(本番ビルドには含まれない)
+├── tests/
+│   └── unit/                # Jest のユニットテスト
+├── server/                  # バックエンドサーバー
+│   ├── index.js             # サーバーエントリーポイント
+│   ├── log-safe.js          # ログ用の伏せ字・エラー要約
+│   ├── package.json         # 依存関係
+│   └── README.md            # サーバードキュメント
+├── .github/
+│   ├── workflows/           # CI(ci.yml)と GitHub Pages へのデプロイ(deploy.yml)
+│   └── actions/verify/      # CI とデプロイ前検証で共通の検証手順
+├── docs/                    # 開発サイクルの調査・設計・テストの記録
+├── package.json             # フロントエンドの依存関係と npm スクリプト
+├── eslint.config.js         # ESLint の設定
+├── jest.config.js           # Jest の設定
+├── vite.config.js           # Vite の設定
+├── SETUP.md                 # 詳しいセットアップガイド
+└── README.md                # このファイル
 ```
 
 ## API エンドポイント
 
-### `GET /api/validate-token?token=xxx`
+`/api/` で始まるエンドポイントには、Discord の `/roulette` コマンドで発行されたアクセストークンを `x-access-token` リクエストヘッダで送ります。トークンが無い・無効・期限切れの場合は `401` を返します。Bot が返す URL の `?token=` はフロントエンドが読み取り、API にはヘッダで送ります（URL のクエリでは API に渡しません）。
+
+### `GET /api/validate-token`
 トークンを検証
 
-### `GET /api/guild?token=xxx`
+### `GET /api/guild`
 ギルド情報を取得
 
-### `GET /api/guild/channels?token=xxx`
+### `GET /api/guild/channels`
 ボイスチャネル一覧を取得
 
-### `GET /api/guild/channels/:channelId/members?token=xxx`
+### `GET /api/guild/channels/:channelId/members`
 ボイスチャネルメンバー一覧を取得
 
 ## トラブルシューティング
@@ -217,15 +272,19 @@ Actions タブでデプロイの進行状況を確認できます。
 - Discord で `/roulette` コマンドを再実行して新しい URL を取得
 
 ### CORS エラー
-- `FRONTEND_URL` が正しく設定されているか確認
-- フロントエンドの URL と完全に一致する必要があります
+- フロントエンドを開いているオリジンが `server/index.js` の `allowedOrigins` に含まれているか確認（`FRONTEND_URL` は CORS には使われません）
+- 別のオリジンで公開する場合は `allowedOrigins` に追加
+
+### Bot が返す URL が違う場所を指す
+- `FRONTEND_URL` が正しいか確認（Bot が返す URL の先頭部分になる）
 
 ## セキュリティ
 
 - トークンベースのアクセス制御
 - トークンは1時間で自動失効
 - 期限切れトークンは自動削除
-- CORS 設定でフロントエンドからのアクセスのみ許可
+- CORS で許可するオリジンを制限（`server/index.js` の `allowedOrigins`）
+- アクセストークンは URL ではなくヘッダで API に送り、サーバーのログには全文を出さない（`server/log-safe.js`）
 - Bot トークンは環境変数で管理
 
 ## ライセンス

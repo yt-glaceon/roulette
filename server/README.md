@@ -6,6 +6,7 @@ Discord Bot と REST API を提供するバックエンドサーバー
 
 - Discord Bot（スラッシュコマンド `/roulette`）
 - トークンベースのアクセス制御
+- ログにはアクセストークンの全文を出さない（`log-safe.js`）
 - REST API（ギルド情報、チャネル情報、メンバー情報）
 - CORS 設定
 
@@ -20,11 +21,7 @@ npm install
 
 ### 2. 環境変数の設定
 
-```bash
-cp .env.example .env
-```
-
-`.env` ファイルを編集:
+`server/` に `.env` を作成して次の内容を書く:
 
 ```env
 # Discord Bot Token
@@ -33,7 +30,7 @@ DISCORD_BOT_TOKEN=your_bot_token_here
 # サーバーポート
 PORT=3000
 
-# フロントエンドURL（CORS設定用）
+# フロントエンドURL（Bot が返す URL の先頭部分）
 FRONTEND_URL=http://localhost:5500
 ```
 
@@ -57,7 +54,11 @@ npm start
 |--------|------|-----|
 | `DISCORD_BOT_TOKEN` | Discord Bot のトークン | `MTQ3Mzg2...` |
 | `PORT` | サーバーのポート番号 | `3000` |
-| `FRONTEND_URL` | フロントエンドのURL（CORS用） | `http://localhost:5500` |
+| `FRONTEND_URL` | Bot が返す URL の先頭部分（未設定時は `http://127.0.0.1:5500`） | `http://localhost:5500` |
+
+### CORS
+
+CORS で許可するオリジンは環境変数ではなく `server/index.js` の `allowedOrigins` で決めています（`https://yt-glaceon.github.io`・`http://localhost:5500`・`http://127.0.0.1:5500`）。別のオリジンでフロントエンドを公開する場合は `allowedOrigins` に追加してください。
 
 ### 本番環境の設定
 
@@ -68,6 +69,18 @@ npm start
 - `FRONTEND_URL`: `https://yt-glaceon.github.io/roulette`
 
 ## API エンドポイント
+
+`/api/` で始まるエンドポイントには、Discord の `/roulette` コマンドで発行されたアクセストークンを `x-access-token` リクエストヘッダで送ります。トークンが無い・無効・期限切れの場合は `401` を返します。Bot が返す URL の `?token=` はフロントエンドが読み取り、API にはヘッダで送ります（URL のクエリでは API に渡しません）。`GET /` のヘルスチェックはトークン不要です。
+
+**401 のレスポンス例:**
+
+```json
+{
+  "error": "無効なトークンです"
+}
+```
+
+エラーメッセージは「アクセストークンが必要です」「無効なトークンです」「トークンの有効期限が切れています」の 3 種類です。
 
 ### `GET /`
 
@@ -83,7 +96,7 @@ npm start
 }
 ```
 
-### `GET /api/validate-token?token=xxx`
+### `GET /api/validate-token`
 
 トークンを検証
 
@@ -96,7 +109,7 @@ npm start
 }
 ```
 
-### `GET /api/guild?token=xxx`
+### `GET /api/guild`
 
 ギルド情報を取得
 
@@ -110,7 +123,7 @@ npm start
 }
 ```
 
-### `GET /api/guild/channels?token=xxx`
+### `GET /api/guild/channels`
 
 ボイスチャネル一覧を取得
 
@@ -121,12 +134,13 @@ npm start
   {
     "id": "987654321",
     "name": "General Voice",
-    "position": 0
+    "position": 0,
+    "memberCount": 3
   }
 ]
 ```
 
-### `GET /api/guild/channels/:channelId/members?token=xxx`
+### `GET /api/guild/channels/:channelId/members`
 
 ボイスチャネルメンバー一覧を取得
 
@@ -155,7 +169,7 @@ npm start
 https://yt-glaceon.github.io/roulette?token=abc123...
 ```
 
-トークンは1時間有効です。
+トークンは1時間有効です。フロントエンドがこのトークンを読み取り、API には `x-access-token` ヘッダで送ります。
 
 ## デプロイ
 
@@ -175,6 +189,8 @@ https://yt-glaceon.github.io/roulette?token=abc123...
    - `FRONTEND_URL`: `https://yt-glaceon.github.io/roulette`
 6. 「Create Web Service」をクリック
 
+初回作成後は、`server/` を変更したコミットが `main` にマージされると Render に自動デプロイされます（Webhook が遅れて数分〜数十分かかることがあります）。`server/` の外だけの変更ではデプロイされません。
+
 #### Node バージョンの指定と確認
 
 - Node バージョンは `server/package.json` の `engines`（`24.x`）で指定している（ルートの `package.json` も同じ値にそろえている）
@@ -190,8 +206,12 @@ https://yt-glaceon.github.io/roulette?token=abc123...
 
 ### CORS エラー
 
-- `FRONTEND_URL` が正しく設定されているか確認
-- フロントエンドの URL と完全に一致する必要があります
+- フロントエンドを開いているオリジンが `server/index.js` の `allowedOrigins` に含まれているか確認（`FRONTEND_URL` は CORS には使われません）
+- 別のオリジンで公開する場合は `allowedOrigins` に追加
+
+### Bot が返す URL が違う場所を指す
+
+- `FRONTEND_URL` が正しいか確認（Bot が返す URL の先頭部分になる）
 
 ### トークンが無効
 

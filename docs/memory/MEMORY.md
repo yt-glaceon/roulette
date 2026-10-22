@@ -28,6 +28,7 @@
 - [express-qs-pinned-audit](entries/express-qs-pinned-audit.md) — express@4.22.1 が qs 6.14.2 を固定し、audit fix 後も qs の moderate が 1 件残る。`npm update express --package-lock-only` で直る(確認前に npm ci)
 - [eslint-flat-config-ignores](entries/eslint-flat-config-ignores.md) — ESLint flat config は .gitignore を読まない。dist/coverage/.claude を globalIgnores で明示。v10 は recommended に 3 ルール追加
 - [discordjs-error-leaks-request](entries/discordjs-error-leaks-request.md) — DiscordAPIError をそのまま console.error すると url のインタラクショントークンがログに出る(requestBody の本文も表示深さ次第で出る)
+- [drum-roll-test-timeout-flaky](entries/drum-roll-test-timeout-flaky.md) — drum-roll.test.js が 5 秒タイムアウト等で毎回 1〜6 件落ちる。コード無変更でも起きる。緩めずに単体再現して報告
 
 ## glossary(プロジェクト固有の用語集)
 
