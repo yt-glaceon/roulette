@@ -20,10 +20,15 @@ const setup = (n) => {
 
 const cardEls = (container) => Array.from(container.querySelectorAll('.card-flip-item'));
 
-/** spin を走らせ、仮想時間を進めて終了まで待つ */
+/**
+ * spin を走らせ、仮想時間を進めて終了まで待つ。
+ * 同期の advanceTimersByTime で進める。jsdom では Async 版が偽タイマー1件ごとに
+ * 本物の setTimeout で待つので、環境しだいで遅くなる。spin はタイマーをすべて同期に
+ * 予約し途中に await が無いため、同期で最後まで進む
+ */
 const runSpin = async (animation, member, duration) => {
     const promise = animation.spin(member, { duration });
-    await jest.advanceTimersByTimeAsync(duration + 1100);
+    jest.advanceTimersByTime(duration + 1100);
     await promise;
 };
 
@@ -110,9 +115,9 @@ describe('CardFlipAnimation', () => {
     test('光が移動するたびに光るカードが1枚だけになる', async () => {
         const { container, animation, members } = setup(5);
         const promise = animation.spin(members[2], { duration: 2000 });
-        await jest.advanceTimersByTimeAsync(1000);
+        jest.advanceTimersByTime(1000);
         expect(container.querySelectorAll('.card-flip-highlight')).toHaveLength(1);
-        await jest.advanceTimersByTimeAsync(2100);
+        jest.advanceTimersByTime(2100);
         await promise;
     });
 
@@ -121,25 +126,25 @@ describe('CardFlipAnimation', () => {
             document.body.innerHTML = '';
             const { container, animation, members } = setup(5);
             const promise = animation.spin(members[2], { duration: 2000 });
-            await jest.advanceTimersByTimeAsync(2001);
+            jest.advanceTimersByTime(2001);
             const cards = cardEls(container);
             cards.forEach((el, i) => {
                 expect(el.classList.contains('card-flip-highlight')).toBe(i === 2);
                 expect(el.classList.contains('card-flip-flipped')).toBe(false);
             });
             // 約 400ms 光ったまま見える
-            await jest.advanceTimersByTimeAsync(300);
+            jest.advanceTimersByTime(300);
             expect(cards[2].classList.contains('card-flip-highlight')).toBe(true);
             expect(cards[2].classList.contains('card-flip-flipped')).toBe(false);
-            await jest.advanceTimersByTimeAsync(100);
+            jest.advanceTimersByTime(100);
             expect(cards[2].classList.contains('card-flip-flipped')).toBe(true);
             expect(cards[2].classList.contains('card-flip-selected')).toBe(true);
             expect(container.querySelectorAll('.card-flip-highlight')).toHaveLength(0);
             // 残りはさらに 300ms 後
             expect(cards[0].classList.contains('card-flip-flipped')).toBe(false);
-            await jest.advanceTimersByTimeAsync(300);
+            jest.advanceTimersByTime(300);
             expect(cards[0].classList.contains('card-flip-flipped')).toBe(true);
-            await jest.advanceTimersByTimeAsync(1100);
+            jest.advanceTimersByTime(1100);
             await promise;
         }
     });
@@ -167,9 +172,11 @@ describe('CardFlipAnimation', () => {
         const { animation, members } = setup(4);
         let done = false;
         animation.spin(members[0], { duration: 1000 }).then(() => { done = true; });
-        await jest.advanceTimersByTimeAsync(1000 + 900);
+        jest.advanceTimersByTime(1000 + 900);
+        await Promise.resolve();
         expect(done).toBe(false);
-        await jest.advanceTimersByTimeAsync(200);
+        jest.advanceTimersByTime(200);
+        await Promise.resolve();
         expect(done).toBe(true);
     });
 
@@ -182,7 +189,7 @@ describe('CardFlipAnimation', () => {
             expect(el.classList.contains('card-flip-selected')).toBe(false);
             expect(el.classList.contains('card-flip-unselected')).toBe(false);
         });
-        await jest.advanceTimersByTimeAsync(2000);
+        jest.advanceTimersByTime(2000);
         await promise;
         expect(cardEls(container)[2].classList.contains('card-flip-selected')).toBe(true);
     });
@@ -205,9 +212,9 @@ describe('CardFlipAnimation', () => {
     test('1人だけでも光の移動を省かず、最後にめくれる', async () => {
         const { container, animation, members } = setup(1);
         const promise = animation.spin(members[0], { duration: 1000 });
-        await jest.advanceTimersByTimeAsync(500);
+        jest.advanceTimersByTime(500);
         expect(animation.lastHighlightSequence.length).toBeGreaterThan(1);
-        await jest.advanceTimersByTimeAsync(2000);
+        jest.advanceTimersByTime(2000);
         await promise;
         expect(cardEls(container)[0].classList.contains('card-flip-selected')).toBe(true);
     });
@@ -216,12 +223,12 @@ describe('CardFlipAnimation', () => {
         const { container, animation, members } = setup(4);
         let done = false;
         animation.spin(members[0], { duration: 2000 }).then(() => { done = true; });
-        await jest.advanceTimersByTimeAsync(500);
+        jest.advanceTimersByTime(500);
         animation.destroy();
         expect(jest.getTimerCount()).toBe(0);
         await Promise.resolve();
         expect(done).toBe(true);
-        await jest.advanceTimersByTimeAsync(5000);
+        jest.advanceTimersByTime(5000);
         expect(container.innerHTML).toBe('');
     });
 
