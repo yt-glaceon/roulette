@@ -2,7 +2,7 @@
 name: eslint-flat-config-ignores
 type: pitfall
 status: active
-related_topics: [ci-actions]
+related_topics: [ci-actions, drum-roll-test-flaky]
 created: 2026-10-22
 updated: 2026-10-22
 ---
