@@ -49,15 +49,16 @@ VITE_API_URL=http://localhost:3000
 ```bash
 cd server
 npm install
-cp .env.example .env
 ```
 
-`server/.env` ファイルを編集して Discord Bot トークンを設定:
+`server/.env` を作成して Discord Bot トークンを設定:
 
 ```env
 DISCORD_BOT_TOKEN=your_bot_token_here
 FRONTEND_URL=http://localhost:5500
 ```
+
+`FRONTEND_URL` は、Bot が `/roulette` コマンドへの返信で送る URL の先頭部分です（例: `https://yt-glaceon.github.io/roulette`。未設定の場合は `http://127.0.0.1:5500`）。CORS で許可するオリジンは環境変数ではなく `server/index.js` の `allowedOrigins` で決めています（`https://yt-glaceon.github.io`・`http://localhost:5500`・`http://127.0.0.1:5500`）。別のオリジンでフロントエンドを公開する場合は `allowedOrigins` に追加してください。
 
 5. **開発サーバーを起動**
 
@@ -76,7 +77,9 @@ npm run dev
 
 6. **ブラウザでアクセス**
 
-`http://localhost:5500` にアクセスしてアプリケーションを確認
+`http://localhost:5500/roulette/` にアクセスしてアプリケーションを確認
+
+Discord なしで画面を確認するには `http://localhost:5500/roulette/?mock`（プリセットのチャネル）、または `?mock=12`（12 人のチャネルを先頭に追加。1〜100）を開きます。開発サーバー専用で、本番ビルドでは無効です。
 
 ## GitHub Actionsの設定
 
@@ -101,13 +104,12 @@ npm run dev
 
 ### 自動デプロイ
 
-`main` ブランチにプッシュすると、自動的にビルド＆デプロイが実行されます:
+`main` はブランチ保護により PR 必須で、CI の `verify` が通るまでマージできません（直接プッシュはできません）。
 
-```bash
-git add .
-git commit -m "Your commit message"
-git push origin main
-```
+1. `main` から作業ブランチを切って変更する
+2. PR を作ると CI（`.github/workflows/ci.yml` の `verify`）が走る
+3. `verify` が通ったら PR をマージする
+4. `main` へのマージで `deploy.yml` が走り、デプロイ前検証（`pre-deploy-verify`、CI と同じ検証）に通った場合だけ GitHub Pages にデプロイされる
 
 ### デプロイの確認
 
@@ -136,6 +138,8 @@ GitHub の Actions タブから手動でワークフローを実行すること�
 2. `VITE_API_URL` が正しく設定されているか確認
 3. 値が正しいか確認（例: `https://your-app.onrender.com`）
 
+デプロイ前検証（lint・テスト・ビルド・モック混入チェック）で落ちた場合は、Actions のログで落ちたステップを確認し、ローカルで `npm run lint`・`npm test`・`npm run build` を実行して再現します。
+
 ### 環境変数が undefined になる
 
 **症状**: `import.meta.env.VITE_API_URL` が `undefined`
@@ -161,13 +165,14 @@ npm install
 
 **症状**: ブラウザのコンソールに CORS エラーが表示される
 
-**原因**: バックエンドの `FRONTEND_URL` が正しく設定されていない
+**原因**: フロントエンドを開いているオリジンが、バックエンドの許可リスト（`server/index.js` の `allowedOrigins`）に含まれていない
 
 **解決方法**:
-1. `server/.env` を確認
-2. `FRONTEND_URL` がフロントエンドのURLと一致しているか確認
-3. 開発環境: `http://localhost:5500`
-4. 本番環境: GitHub Pages の URL
+1. ブラウザのアドレスバーのオリジン（例: `http://localhost:5500`）を確認
+2. `server/index.js` の `allowedOrigins` に含まれているか確認
+3. 含まれていなければ追加してバックエンドを再起動・再デプロイ
+
+`FRONTEND_URL` は CORS には使われません。
 
 ## 環境変数の管理
 
@@ -209,6 +214,8 @@ npm run build
 ```
 
 ビルド成果物は `dist/` ディレクトリに生成されます。
+
+テスト・lint などの開発用コマンドは、README の「開発」節を参照してください。
 
 ### プレビュー
 
