@@ -17,6 +17,8 @@
 3. 開発・CI・デプロイの説明を現状に合わせる(フロントの開発サーバーの URL、モック、テスト・lint・ビルドのコマンド、PR と CI を経由したデプロイの流れ)。
 4. `server/README.md` の API 説明とデプロイ説明を同じ内容に合わせる(下記 D)。
 5. `SETUP.md` の開発サーバーの URL とデプロイ説明を同じ内容に合わせる(下記 E)。
+6. 3 ファイルで `FRONTEND_URL` を「CORS 用」と説明している箇所を、実装どおり「Bot が返す URL の組み立てに使う」に直し、CORS は `server/index.js` の許可リストで判定すると書く(下記 F。ゲート1の修正依頼で追加)。
+7. README の「特徴」「使い方」を、4 種類の演出と演出時間の選択に合わせる(下記 G。ゲート1の修正依頼で追加)。
 
 ### やらないこと(スコープ外)
 
@@ -24,14 +26,13 @@
 - コード・設定ファイルの変更。
 - 上の 3 ファイル以外の文書(`docs/`・`.kiro/specs/` など)。
 - 3 ファイルのうち、今回のずれと関係のない記述の書き直し(例: SETUP.md のトラブルシューティングの既存項目、`your-username` などのプレースホルダー)。
-- `server/.env.example` ファイルの新規作成(手順の文言だけを直す。下記 C-5)。
-- 設計レビューで見つかった次の 2 つのずれ(フォローアップとして PR 本文に書く):
-  - `FRONTEND_URL` は「CORS 用」と書かれているが、実装の CORS はハードコードされた `allowedOrigins`(`server/index.js:125-129`)で判定しており、`FRONTEND_URL` は Bot が返す URL の組み立てにだけ使われる。
-  - README の「特徴」「使い方」がルーレット演出だけを前提にしている(実際はスロット・ドラムロール・カードめくりも選べる)。
+- `server/.env.example` ファイルの新規作成(手順の文言だけを直す。下記 C-4・D-5・E-3)。
+- `allowedOrigins` の判定が前方一致(`origin.startsWith(allowed)`)で、`https://yt-glaceon.github.io.attacker.example` のようなオリジンや Origin の無いリクエストも通る件。コードの修正になるため別トピックで扱う(PR 本文にフォローアップとして書く)。文書では「フロントエンドからのアクセスのみ許可」と言い切らない(F の README.md-3)。
+- CORS の許可リストを環境変数に移すなど、コード側の変更(文書を実装に合わせるだけにする)。
 
 ## アーキテクチャ・変更概要
 
-変更するファイルは `README.md`・`server/README.md`・`SETUP.md` の 3 つ。A〜C は `README.md`、D は `server/README.md`、E は `SETUP.md` の変更。3 ファイルで同じことを書く箇所は、下の「共通文案」をそのまま使う(各ファイルの見出しレベルや前後の文に合わせた最小限の調整は可)。
+変更するファイルは `README.md`・`server/README.md`・`SETUP.md` の 3 つ。A〜C・G は `README.md`、D は `server/README.md`、E は `SETUP.md` の変更。F は 3 ファイルにまたがるので、ファイルごとの項目を F に列挙し、各タスクが自分のファイルの分だけを行う。3 ファイルで同じことを書く箇所は、下の「共通文案」をそのまま使う(各ファイルの見出しレベルや前後の文に合わせた最小限の調整は可)。
 
 ### 共通文案
 
@@ -55,6 +56,10 @@
 **文案M(モック)** — C-1・E-1 で使う:
 
 > Discord なしで画面を確認するには `http://localhost:5500/roulette/?mock`(プリセットのチャネル)、または `?mock=12`(12 人のチャネルを先頭に追加。1〜100)を開きます。開発サーバー専用で、本番ビルドでは無効です。
+
+**文案F(`FRONTEND_URL` と CORS)** — F で使う:
+
+> `FRONTEND_URL` は、Bot が `/roulette` コマンドへの返信で送る URL の先頭部分です(例: `https://yt-glaceon.github.io/roulette`。未設定の場合は `http://127.0.0.1:5500`)。CORS で許可するオリジンは環境変数ではなく `server/index.js` の `allowedOrigins` で決めています(`https://yt-glaceon.github.io`・`http://localhost:5500`・`http://127.0.0.1:5500`)。別のオリジンでフロントエンドを公開する場合は `allowedOrigins` に追加してください。
 
 地の文・コード例のどちらにも `git push origin main` という文字列は書かない(機械チェックの対象)。
 
@@ -84,7 +89,7 @@
 │   ├── roulette-engine.js   # ルーレットロジック
 │   ├── ui-controller.js     # UI制御
 │   ├── result-manager.js    # 結果管理
-│   ├── animations/          # 演出(ルーレット・スロット・ドラムロール・カードめくり、時間配分の計算)
+│   ├── animations/          # 演出(円形ルーレット・スロットマシン・カードめくり・ドラムロール、時間配分の計算)
 │   └── dev/                 # 開発サーバー専用のモック(本番ビルドには含まれない)
 ├── tests/
 │   └── unit/                # Jest のユニットテスト
@@ -114,14 +119,14 @@
    - 文案M を足す。
 2. 新しい節「## 開発」を「セットアップ」節の後、「技術スタック」節の前に追加する。
    - ルートで実行するコマンドの表または箇条書き: `npm test`(Jest。ES Modules のため `--experimental-vm-modules` 付きで実行される)、`npm run test:watch`、`npm run test:coverage`、`npm run lint`(ESLint、警告 0 件が必要)、`npm run build`(`dist/` に出力)、`npm run preview`。
-   - `server/` にはテストがないことを 1 行で書く。
+   - 「`server/` に独自のテストスクリプトは無い。`server/log-safe.js` のテストはルートの `npm test` に含まれる(`tests/unit/server-log-safe.test.js`)」と 1 行で書く。
    - 変更の流れ: 文案P を載せる。
    - CI の中身を 1 行で書く: lint → `node --check server/index.js` → テスト → ビルド → 本番ビルドにモックが混入していないかの確認(`.github/actions/verify`)。
 3. 「6.3 デプロイ」
    - `git add` / `git commit` / push のコード例を消し、「変更の流れは「開発」節を参照。PR を `main` にマージすると `deploy.yml` が走り、デプロイ前検証に通った場合だけ GitHub Pages にデプロイされます。」に置き換える。進行状況は Actions タブで確認できる、という既存の文は残す。
    - 「5. Render へのデプロイ」の手順 6(「Create Web Service」)の後、「Node バージョンの指定と確認は `server/README.md` を参照。」の前に、文案R を足す。
-5. 「3. バックエンドのセットアップ(ローカル)」: `server/` に `.env.example` は無いので、`cp .env.example .env` の行を消し、「`server/.env` を作成して次の変数を設定」とし、`DISCORD_BOT_TOKEN`・`PORT`(省略時 3000)・`FRONTEND_URL`(開発時は `http://localhost:5500`)を書く。ルートの `.env.example` はあるので「4. フロントエンドのセットアップ」の `cp .env.example .env` はそのまま。
-4. 「技術スタック」節に「### 開発ツール」を足す: Vite、Jest(jsdom)+ fast-check、ESLint、GitHub Actions。
+4. 「3. バックエンドのセットアップ(ローカル)」: `server/` に `.env.example` は無いので、`cp .env.example .env` の行を消し、「`server/.env` を作成して次の変数を設定」とし、`DISCORD_BOT_TOKEN`・`PORT`(省略時 3000)・`FRONTEND_URL`(開発時は `http://localhost:5500`)を書く。ルートの `.env.example` はあるので「4. フロントエンドのセットアップ」の `cp .env.example .env` はそのまま。
+5. 「技術スタック」節に「### 開発ツール」を足す: Vite、Jest(jsdom)+ fast-check、ESLint、GitHub Actions。
 
 ### D. `server/README.md`
 
@@ -135,22 +140,58 @@
 4. 「機能」節の「トークンベースのアクセス制御」の後に「ログにはアクセストークンの全文を出さない(`log-safe.js`)」を 1 項目足す。
 5. 「2. 環境変数の設定」: `cp .env.example .env` を消し、「`server/` に `.env` を作成して次の内容を書く」とする(続く `.env` の例はそのまま)。
 
+### F. `FRONTEND_URL` と CORS の説明(3 ファイル)
+
+実装の事実: `FRONTEND_URL` は `server/index.js:90-91` で Bot が返す URL(`${FRONTEND_URL}?token=...`)を組み立てるのにだけ使う。CORS は `server/index.js:125-138` の `allowedOrigins`(ハードコード)とリクエストの `Origin` の前方一致で判定する。`FRONTEND_URL` の値は CORS に影響しない。
+
+- `README.md`
+  1. 「トラブルシューティング」→「CORS エラー」の 2 項目を次に置き換える: 「フロントエンドを開いているオリジンが `server/index.js` の `allowedOrigins` に含まれているか確認(`FRONTEND_URL` は CORS には使われません)」「別のオリジンで公開する場合は `allowedOrigins` に追加」。
+  2. 「トラブルシューティング」に「### Bot が返す URL が違う場所を指す」を足し、「`FRONTEND_URL` が正しいか確認(Bot が返す URL の先頭部分になる)」と書く。
+  3. 「セキュリティ」節の「CORS 設定でフロントエンドからのアクセスのみ許可」を「CORS で許可するオリジンを制限(`server/index.js` の `allowedOrigins`)」に置き換える(判定が前方一致のため「のみ許可」と言い切らない)。
+  4. 「5. Render へのデプロイ」の手順 5 の `FRONTEND_URL`: GitHub Pages の URL を「`FRONTEND_URL`: `https://yt-glaceon.github.io/roulette`(Bot が返す URL の先頭部分)」にする(server/README.md の 68・175 行目と同じ値)。
+- `server/README.md`
+  1. `.env` の例のコメント `# フロントエンドURL（CORS設定用）` を `# フロントエンドURL（Bot が返す URL の先頭部分）` に直す。
+  2. 環境変数表の `FRONTEND_URL` の説明「フロントエンドのURL（CORS用）」を「Bot が返す URL の先頭部分（未設定時は `http://127.0.0.1:5500`）」に直す。
+  - server/README.md と README.md の既存の括弧の表記(全角か半角か)は、各ファイルのその箇所の周りに合わせる。
+  3. 環境変数表の後に「### CORS」小見出しを足し、文案F のうち CORS の 2 文(「CORS で許可するオリジンは…」以降)を書く。
+  4. 「トラブルシューティング」→「CORS エラー」を README の F-1 と同じ内容に置き換える。同じ節に README の F-2 と同じ項目を足す。
+  5. 「機能」節の「CORS 設定」はそのまま。
+- `SETUP.md`
+  1. 「4. バックエンドのセットアップ」の `.env` の例の後に、文案F の 1 文目(`FRONTEND_URL` の説明)を書く。
+  2. 「トラブルシューティング」→「CORS エラーが発生する」の **原因** と **解決方法** を次に置き換える: 原因「フロントエンドを開いているオリジンが、バックエンドの許可リスト(`server/index.js` の `allowedOrigins`)に含まれていない」、解決方法「1. ブラウザのアドレスバーのオリジン(例: `http://localhost:5500`)を確認 2. `server/index.js` の `allowedOrigins` に含まれているか確認 3. 含まれていなければ追加してバックエンドを再起動・再デプロイ」。「`FRONTEND_URL` は CORS には使われません」と添える。
+
+### G. README の「特徴」「使い方」
+
+実装の事実: `index.html:32-45` で演出を「円形ルーレット」「スロットマシン」「カードめくり」「ドラムロール」の 4 つから選び、演出時間をスライダーで 3〜10 秒(初期値 6 秒、1 秒刻み)から選ぶ。演出が終わると「結果を見る」ボタンが出て、押すと結果画面に移る(`index.html:49-52`)。
+
+1. 「特徴」節
+   - 「🎰 円グラフ型のルーレットアニメーション(6秒間回転)」を「🎰 4 種類の演出(円形ルーレット・スロットマシン・カードめくり・ドラムロール)」に置き換える。
+   - その次に「⏱️ 1 人あたりの演出時間を 3〜10 秒で調整(初期値 6 秒)」を足す(時間は選出する 1 人ごとの演出に渡される。`ui-controller.js:690`)。
+   - 「🎯 白線回避機能(針がセクション中央に停止)」は「🎯 白線回避機能(円形ルーレットで針がセクション中央に停止)」にする。
+   - ほかの項目はそのまま。
+2. 「使い方」節の「3. URL にアクセスしてルーレット実行」の手順を次にする(既存の 1〜5 はそのまま):
+   6. アニメーション方式(円形ルーレット・スロットマシン・カードめくり・ドラムロール)を選ぶ
+   7. 1 人あたりのアニメーション時間(3〜10 秒)を選ぶ
+   8. 「ルーレット開始」をクリック
+   9. 選んだ方式の演出で、選出されたメンバーが順に決まる
+   10. 「結果を見る」をクリックすると結果が表示される(ロール付き)
+
 ### E. `SETUP.md`
 
-1. 「6. ブラウザでアクセス」: `http://localhost:5500` を `http://localhost:5500/roulette/` に直し、文案M を足す。`FRONTEND_URL=http://localhost:5500`(「4. バックエンドのセットアップ」の `.env` 例、トラブルシューティングの「CORS エラー」)は変えない。
+1. 「6. ブラウザでアクセス」: `http://localhost:5500` を `http://localhost:5500/roulette/` に直し、文案M を足す。「4. バックエンドのセットアップ」の `.env` 例の `FRONTEND_URL=http://localhost:5500` は変えない。トラブルシューティングの「CORS エラーが発生する」は F の SETUP.md-2 に従う。
 2. 「デプロイ」→「自動デプロイ」: `git add` / `git commit` / push のコード例を消し、文案P に置き換える。
-6. 「4. バックエンドのセットアップ」: `cp .env.example .env` の行を消し、「`server/.env` を作成して Discord Bot トークンを設定」とする(続く `.env` の例はそのまま)。
-3. 「デプロイの確認」「手動デプロイ」はそのまま。
-4. 「トラブルシューティング」→「ビルドが失敗する」に 1 行足す: デプロイ前検証(lint・テスト・ビルド・モック混入チェック)で落ちた場合は、Actions のログで落ちたステップを確認し、ローカルで `npm run lint`・`npm test`・`npm run build` を実行して再現する。
-5. 「ビルドコマンド」節には `npm test`・`npm run lint` を足さず、README の「開発」節を参照する 1 行を足す(同じ一覧を 2 か所に持たない)。
+3. 「4. バックエンドのセットアップ」: `cp .env.example .env` の行を消し、「`server/.env` を作成して Discord Bot トークンを設定」とする(続く `.env` の例はそのまま)。
+4. 「デプロイの確認」「手動デプロイ」はそのまま。
+5. 「トラブルシューティング」→「ビルドが失敗する」に 1 行足す: デプロイ前検証(lint・テスト・ビルド・モック混入チェック)で落ちた場合は、Actions のログで落ちたステップを確認し、ローカルで `npm run lint`・`npm test`・`npm run build` を実行して再現する。
+6. 「ビルドコマンド」節には `npm test`・`npm run lint` を足さず、README の「開発」節を参照する 1 行を足す(同じ一覧を 2 か所に持たない)。
 
 ## 実装ステップ
 
 1 ファイル 1 タスクにする。3 タスクは互いに別のファイルしか触らず、結果にも依存しないため並列で実行する。
 
-- [ ] タスク1: `README.md` を上記 A・B・C のとおり編集する
-- [ ] タスク2: `server/README.md` を上記 D のとおり編集する
-- [ ] タスク3: `SETUP.md` を上記 E のとおり編集する
+- [ ] タスク1: `README.md` を上記 A・B・C・G と F の `README.md` 分のとおり編集する
+- [ ] タスク2: `server/README.md` を上記 D と F の `server/README.md` 分のとおり編集する
+- [ ] タスク3: `SETUP.md` を上記 E と F の `SETUP.md` 分のとおり編集する
 
 言い回しの統一(3 ファイルで同じことを書く箇所)は、各タスクの指示に同じ文案を渡してそろえる。
 
@@ -164,6 +205,12 @@
   - 3 ファイルとも `git push origin main` が 0 件(地の文にも書かない指示のため、全文で 0 件)。
   - 3 ファイルとも `server/` 側の手順で `cp .env.example .env` を使っていない(ルートの「フロントエンドのセットアップ」と SETUP.md「3. 環境変数を設定」の `cp .env.example .env` は残る)。
   - 3 ファイルとも `FRONTEND_URL=http://localhost:5500/roulette` で始まる行が 0 件(既存の行は変えず、新しく足す行にも `/roulette/` を付けない)。
+  - 3 ファイルとも `CORS用`・`CORS設定用`・`CORS 用` が 0 件。
+  - 3 ファイルとも「フロントエンドの URL と完全に一致する必要があります」が 0 件。
+  - `SETUP.md` に「バックエンドの `FRONTEND_URL` が正しく設定されていない」が 0 件。
+  - `README.md` の F-1・F-2 と `server/README.md` の F-4 の文面が一致する(コードレビューで突き合わせる)。
+  - 3 ファイルに書いた `allowedOrigins` の 3 つのオリジンが `server/index.js` の `allowedOrigins` と一致する。
+  - `README.md` に `6秒間回転` が 0 件で、`スロットマシン`・`カードめくり`・`ドラムロール`・`結果を見る` がそれぞれ 1 件以上。`index.html` の選択肢の名前・ボタン名・時間の範囲(3〜10 秒、初期値 6 秒)と一致する。
   - `README.md`・`server/README.md` に `x-access-token` が 1 件以上。
   - `README.md`・`SETUP.md` に `localhost:5500/roulette/` が 1 件以上。
   - `server/README.md` の 401 のエラーメッセージ 3 種類が `server/index.js` の文言と完全に一致する。
@@ -190,7 +237,8 @@
 
 | ラウンド | 判定 | 主な指摘 |
 | --- | --- | --- |
-| 1 | PASS | 事実の裏取りはすべて一致。MINOR 9 件: `server/.env.example` が無いのに手順が `cp` している(→ C-5・D-5・E-6 で反映)、`/api/guild/channels` の例に `memberCount` が無い(→ D-1 で反映)、`FRONTEND_URL` は CORS に使われていない・README の特徴がルーレット演出だけ(→ スコープ外としてフォローアップに記録)、共通文案が無い(→「共通文案」節を追加)、挿入位置の曖昧さ(→ C-3・D-3 で明記)、変えてはいけない `localhost:5500`(→ C-1・E-1 で明記)、機械チェックと地の文の衝突(→ 文字列自体を書かない指示に)、構造図にルートの `package.json` が無い(→ B に追加) |
+| 1 | PASS | 事実の裏取りはすべて一致。MINOR 9 件: `server/.env.example` が無いのに手順が `cp` している(→ C-4・D-5・E-3 で反映)、`/api/guild/channels` の例に `memberCount` が無い(→ D-1 で反映)、`FRONTEND_URL` は CORS に使われていない・README の特徴がルーレット演出だけ(→ スコープ外としてフォローアップに記録)、共通文案が無い(→「共通文案」節を追加)、挿入位置の曖昧さ(→ C-3・D-3 で明記)、変えてはいけない `localhost:5500`(→ C-1・E-1 で明記)、機械チェックと地の文の衝突(→ 文字列自体を書かない指示に)、構造図にルートの `package.json` が無い(→ B に追加) |
+| 2(ゲート1の修正依頼で F・G を追加した後) | PASS | F・G の事実はすべて一致。MINOR 7 件をすべて反映: E-1 と F の矛盾(→ E-1 を修正)、`server/` にテストが無いは誤り(→ C-2 を修正)、README の Render 手順の `FRONTEND_URL` 値(→ F の README.md-4 を追加)、CORS の前方一致(→ スコープ外に記録しセキュリティ節の表現を弱める)、演出時間は 1 人あたり(→ G を修正)、F の誤記の残りを検出するチェック(→ テスト戦略に追加)、小番号の順序・表記ゆれ(→ C・E を並べ直し、B の順序と括弧の表記を統一) |
 
 未解決のMAJORが残った場合: なし
 
@@ -208,6 +256,7 @@
 
 | 日時 | 判断 | コメント |
 | --- | --- | --- |
+| 2026-10-22 | 修正依頼 | スコープ外にしていた 2 件(`FRONTEND_URL` を CORS 用と書いている件、README の特徴・使い方がルーレット演出だけの前提の件)も今回直す。F・G を追加。Skill 化候補 render-root-dir-autodeploy は保留 |
 
 ## 壁打ちの記録
 
