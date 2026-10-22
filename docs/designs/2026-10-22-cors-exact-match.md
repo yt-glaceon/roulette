@@ -141,9 +141,9 @@ PR を revert して main にマージすれば Render が前の版を自動デ�
 
 | ラウンド | 判定 | 主な指摘 |
 | --- | --- | --- |
-| 1 |  |  |
+| 1 | PASS | MINOR: `server/cors-origin.js` とテストの日本語の括弧が半角だった(前例は全角)→ implementer が全角にそろえた |
 
-未解決のMAJORが残った場合:
+未解決のMAJORが残った場合: なし
 
 ## 人間確認ゲート記録
 

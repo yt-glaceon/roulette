@@ -15,7 +15,7 @@ describe('isAllowedOrigin', () => {
         expect(isAllowedOrigin(origin, ALLOWED)).toBe(true);
     });
 
-    test('Origin ヘッダ無し(undefined)は許可する', () => {
+    test('Origin ヘッダ無し（undefined）は許可する', () => {
         expect(isAllowedOrigin(undefined, ALLOWED)).toBe(true);
     });
 
