@@ -58,7 +58,7 @@ DISCORD_BOT_TOKEN=your_bot_token_here
 FRONTEND_URL=http://localhost:5500
 ```
 
-`FRONTEND_URL` は、Bot が `/roulette` コマンドへの返信で送る URL の先頭部分です（例: `https://yt-glaceon.github.io/roulette`。未設定の場合は `http://127.0.0.1:5500`）。CORS で許可するオリジンは環境変数ではなく `server/index.js` の `allowedOrigins` で決めています（`https://yt-glaceon.github.io`・`http://localhost:5500`・`http://127.0.0.1:5500`）。別のオリジンでフロントエンドを公開する場合は `allowedOrigins` に追加してください。
+`FRONTEND_URL` は、Bot が `/roulette` コマンドへの返信で送る URL の先頭部分です（例: `https://yt-glaceon.github.io/roulette`。未設定の場合は `http://127.0.0.1:5500`）。CORS で許可するオリジンは環境変数ではなく `server/index.js` の `allowedOrigins` で決めています（`https://yt-glaceon.github.io`・`http://localhost:5500`・`http://127.0.0.1:5500`）。オリジンはスキーム・ホスト・ポートまで完全一致で判定します。別のオリジンでフロントエンドを公開する場合は `allowedOrigins` に追加してください。
 
 5. **開発サーバーを起動**
 
@@ -169,7 +169,7 @@ npm install
 
 **解決方法**:
 1. ブラウザのアドレスバーのオリジン（例: `http://localhost:5500`）を確認
-2. `server/index.js` の `allowedOrigins` に含まれているか確認
+2. `server/index.js` の `allowedOrigins` に含まれているか確認（完全一致で判定するため、末尾の `/` やポート・スキームの違いも不一致になります）
 3. 含まれていなければ追加してバックエンドを再起動・再デプロイ
 
 `FRONTEND_URL` は CORS には使われません。

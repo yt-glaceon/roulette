@@ -1,8 +1,8 @@
 ---
 name: jest-esm-globals
 type: pitfall
-status: active
-related_topics: [roulette-animation-behavior, ci-actions, drum-roll-test-flaky]
+status: promoted-to-skill
+related_topics: [roulette-animation-behavior, ci-actions, cors-exact-match, drum-roll-test-flaky]
 created: 2026-10-21
 updated: 2026-10-22
 ---
@@ -16,3 +16,5 @@ fake timers は `Date.now` も偽装するので、時刻ベースのスケジ�
 **適用範囲:** `tests/unit/` に spy・モック・fake timers を使うテストを書くとき。
 
 **関連:** [[import-meta-env-in-jest]]
+
+**Skill 化:** `.claude/skills/jest-esm-tests/SKILL.md`(2026-10-22、cors-exact-match のゲート1で承認)

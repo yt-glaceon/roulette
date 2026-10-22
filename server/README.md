@@ -60,6 +60,10 @@ npm start
 
 CORS で許可するオリジンは環境変数ではなく `server/index.js` の `allowedOrigins` で決めています（`https://yt-glaceon.github.io`・`http://localhost:5500`・`http://127.0.0.1:5500`）。別のオリジンでフロントエンドを公開する場合は `allowedOrigins` に追加してください。
 
+オリジンはスキーム・ホスト・ポートまで完全一致で判定します（判定は `server/cors-origin.js` の `isAllowedOrigin`）。末尾に `/` を付けた形や、大文字小文字・ポート・スキームの違うオリジンは許可されません。
+
+Origin ヘッダの無いリクエスト（Render のヘルスチェックや curl など）は許可しています。CORS はブラウザにしか効かず、拒否しても守りにならないためです。API はアクセストークンで守っています。
+
 ### 本番環境の設定
 
 **Render**:
@@ -207,6 +211,7 @@ https://yt-glaceon.github.io/roulette?token=abc123...
 ### CORS エラー
 
 - フロントエンドを開いているオリジンが `server/index.js` の `allowedOrigins` に含まれているか確認（`FRONTEND_URL` は CORS には使われません）
+- オリジンはスキーム・ホスト・ポートまで完全一致で判定します（末尾に `/` を付けない。大文字小文字やポート・スキームの違いも不一致）
 - 別のオリジンで公開する場合は `allowedOrigins` に追加
 
 ### Bot が返す URL が違う場所を指す

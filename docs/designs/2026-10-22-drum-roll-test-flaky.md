@@ -82,7 +82,7 @@ PR を revert する。テストと Jest 設定だけの変更で、本番コー
 
 未解決のMAJORが残った場合: なし
 
-スキル化候補: [[jest-esm-globals]](related_topics 3件: roulette-animation-behavior, ci-actions, drum-roll-test-flaky)
+スキル化候補: [[jest-esm-globals]](related_topics 3件: roulette-animation-behavior, ci-actions, drum-roll-test-flaky)。ゲート1では保留としたが、同日に main へマージされた cors-exact-match で `.claude/skills/jest-esm-tests/` に Skill 化済みだった。main を取り込んだ際に、その手順4(偽タイマーの進め方)を今回の結論に合わせて更新した
 
 ## コードレビュー結果
 
