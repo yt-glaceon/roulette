@@ -1,8 +1,8 @@
 ---
 name: drum-roll-test-timeout-flaky
 type: pitfall
-status: active
-related_topics: [readme-refresh]
+status: superseded
+related_topics: [readme-refresh, drum-roll-test-flaky]
 created: 2026-10-22
 updated: 2026-10-22
 ---
@@ -14,3 +14,5 @@ updated: 2026-10-22
 対処: 文書だけ・演出と無関係な変更のトピックで `npm test` が drum-roll だけ落ちたら、まず `node --experimental-vm-modules node_modules/jest/bin/jest.js tests/unit/drum-roll.test.js` を単体で複数回流して再現性を見る。テストを緩めたりスキップしたりせず、不合格または既知の不安定としてレポートに書き、別トピックで直す(テストごとのタイムアウト指定や重い反復の削減が候補)。
 
 **適用範囲:** `tests/unit/drum-roll.test.js`(`jest.useFakeTimers()` の反復テストと実時間の fast-check テスト)。
+
+**更新(2026-10-22, drum-roll-test-flaky):** 原因は jsdom 環境の `advanceTimersByTimeAsync` が偽タイマー1件ごとに本物の `setTimeout` で待つことと、タイムアウトしたテストのループが後続テストを汚すこと。[[jsdom-fake-timers-async-real-time]] に置き換えた。

@@ -7,6 +7,11 @@ export default {
   testMatch: [
     '**/tests/**/*.test.js'
   ],
+  // 他トピックのワークツリー(.claude/worktrees/)のテストを拾わないため
+  testPathIgnorePatterns: [
+    '/node_modules/',
+    '<rootDir>/.claude/'
+  ],
   collectCoverageFrom: [
     'js/**/*.js',
     '!js/config.js',

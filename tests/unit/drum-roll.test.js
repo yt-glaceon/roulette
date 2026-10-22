@@ -43,9 +43,12 @@ describe('DrumRollAnimation', () => {
     };
 
     // fake timers 上で spin を最後まで進める
+    // 同期の advanceTimersByTime を使う(jsdom では非同期版が偽タイマー1件ごとに
+    // 本物の setTimeout で待つので、環境しだいで遅くなる)。
+    // spin の切り替えは Promise をはさまないタイマーの連鎖なので、同期で最後まで進む
     const runSpin = async (winner, duration) => {
         const promise = drum.spin(winner, { duration });
-        await jest.advanceTimersByTimeAsync(duration + 2000);
+        jest.advanceTimersByTime(duration + 2000);
         await promise;
     };
 
@@ -167,7 +170,7 @@ describe('DrumRollAnimation', () => {
         let done = false;
         promise.then(() => { done = true; });
         for (let t = 0; t < 1600; t += 10) {
-            await jest.advanceTimersByTimeAsync(10);
+            jest.advanceTimersByTime(10);
             transforms.push(display.style.transform);
         }
         await promise;
@@ -190,7 +193,7 @@ describe('DrumRollAnimation', () => {
         const members = makeMembers(5);
         drum.initialize(members);
         const promise = drum.spin(members[2], { duration: 3000 });
-        await jest.advanceTimersByTimeAsync(500);
+        jest.advanceTimersByTime(500);
         expect(jest.getTimerCount()).toBeGreaterThan(0);
 
         drum.destroy();
