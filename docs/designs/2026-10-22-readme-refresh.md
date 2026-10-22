@@ -1,10 +1,10 @@
 # 設計: README・SETUP.md・server/README.md を現状の実装に合わせて更新する(readme-refresh)
 
 - 日付: 2026-10-22
-- ステータス: レビュー待ち
+- ステータス: 承認済み
 - 対応する調査ドキュメント: [docs/investigations/2026-10-22-readme-refresh.md](../investigations/2026-10-22-readme-refresh.md)
-- 承認者: (承認ゲート通過時に記入)
-- 承認日: (承認ゲート通過時に記入)
+- 承認者: yt-glaceon
+- 承認日: 2026-10-22
 
 ## 目的・スコープ
 
@@ -257,6 +257,7 @@
 | 日時 | 判断 | コメント |
 | --- | --- | --- |
 | 2026-10-22 | 修正依頼 | スコープ外にしていた 2 件(`FRONTEND_URL` を CORS 用と書いている件、README の特徴・使い方がルーレット演出だけの前提の件)も今回直す。F・G を追加。Skill 化候補 render-root-dir-autodeploy は保留 |
+| 2026-10-22 | 承認 | F・G とラウンド2の指摘を反映した設計で承認 |
 
 ## 壁打ちの記録
 
