@@ -118,7 +118,7 @@ npm run dev
 
 ブラウザで `http://localhost:5500/roulette/` にアクセス
 
-Discord なしで画面を確認するには `http://localhost:5500/roulette/?mock`(プリセットのチャネル)、または `?mock=12`(12 人のチャネルを先頭に追加。1〜100)を開きます。開発サーバー専用で、本番ビルドでは無効です。
+Discord なしで画面を確認するには `http://localhost:5500/roulette/?mock`（プリセットのチャネル）、または `?mock=12`（12 人のチャネルを先頭に追加。1〜100）を開きます。開発サーバー専用で、本番ビルドでは無効です。
 
 ### 5. Render へのデプロイ
 
@@ -133,10 +133,10 @@ Discord なしで画面を確認するには `http://localhost:5500/roulette/?mo
    - **Start Command**: `npm start`
 5. 環境変数を設定:
    - `DISCORD_BOT_TOKEN`: Bot トークン
-   - `FRONTEND_URL`: `https://yt-glaceon.github.io/roulette`(Bot が返す URL の先頭部分)
+   - `FRONTEND_URL`: `https://yt-glaceon.github.io/roulette`（Bot が返す URL の先頭部分）
 6. 「Create Web Service」をクリック
 
-初回作成後は、`server/` を変更したコミットが `main` にマージされると Render に自動デプロイされます(Webhook が遅れて数分〜数十分かかることがあります)。`server/` の外だけの変更ではデプロイされません。
+初回作成後は、`server/` を変更したコミットが `main` にマージされると Render に自動デプロイされます（Webhook が遅れて数分〜数十分かかることがあります）。`server/` の外だけの変更ではデプロイされません。
 
 Node バージョンの指定と確認は `server/README.md` を参照。
 
@@ -177,12 +177,12 @@ Actions タブでデプロイの進行状況を確認できます。
 
 ### 変更の流れ
 
-`main` はブランチ保護により PR 必須で、CI の `verify` が通るまでマージできません(直接プッシュはできません)。
+`main` はブランチ保護により PR 必須で、CI の `verify` が通るまでマージできません（直接プッシュはできません）。
 
 1. `main` から作業ブランチを切って変更する
-2. PR を作ると CI(`.github/workflows/ci.yml` の `verify`)が走る
+2. PR を作ると CI（`.github/workflows/ci.yml` の `verify`）が走る
 3. `verify` が通ったら PR をマージする
-4. `main` へのマージで `deploy.yml` が走り、デプロイ前検証(`pre-deploy-verify`、CI と同じ検証)に通った場合だけ GitHub Pages にデプロイされる
+4. `main` へのマージで `deploy.yml` が走り、デプロイ前検証（`pre-deploy-verify`、CI と同じ検証）に通った場合だけ GitHub Pages にデプロイされる
 
 CI では lint → `node --check server/index.js` → テスト → ビルド → 本番ビルドにモックが混入していないかの確認を順に実行します（`.github/actions/verify`）。
 
@@ -243,7 +243,7 @@ CI では lint → `node --check server/index.js` → テスト → ビルド �
 
 ## API エンドポイント
 
-`/api/` で始まるエンドポイントには、Discord の `/roulette` コマンドで発行されたアクセストークンを `x-access-token` リクエストヘッダで送ります。トークンが無い・無効・期限切れの場合は `401` を返します。Bot が返す URL の `?token=` はフロントエンドが読み取り、API にはヘッダで送ります(URL のクエリでは API に渡しません)。
+`/api/` で始まるエンドポイントには、Discord の `/roulette` コマンドで発行されたアクセストークンを `x-access-token` リクエストヘッダで送ります。トークンが無い・無効・期限切れの場合は `401` を返します。Bot が返す URL の `?token=` はフロントエンドが読み取り、API にはヘッダで送ります（URL のクエリでは API に渡しません）。
 
 ### `GET /api/validate-token`
 トークンを検証
